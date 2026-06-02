@@ -34,8 +34,10 @@ export function SessionEngine({
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [user, setUser] = useState<YapprUser | null>(null);
   const [micErr, setMicErr] = useState<string | null>(null);
+  const [speechOk, setSpeechOk] = useState<boolean | null>(null);
 
   useEffect(() => {
+    setSpeechOk(speechSupported());
     try {
       const raw = localStorage.getItem("yappr.user");
       if (raw) setUser(JSON.parse(raw));
