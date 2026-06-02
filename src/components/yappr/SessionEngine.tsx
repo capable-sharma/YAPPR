@@ -109,6 +109,10 @@ export function SessionEngine({
     const r = analyzeTranscript(t.transcript, t.durationSec, { requiredWord });
     setResult(r);
     setPhase("results");
+    // Count toward the 30-day lock-in: one valid recording per IST day.
+    if (t.transcript.trim().split(/\s+/).filter(Boolean).length >= 10) {
+      markTodayComplete();
+    }
   };
 
   const onAuth = (u: YapprUser) => {
