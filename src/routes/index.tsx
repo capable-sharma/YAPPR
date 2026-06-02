@@ -80,13 +80,7 @@ function YapprApp() {
             onSkip={() => setVocabIdx((i) => i + 1)}
           />}
 
-          <div className="brutal-border bg-ink text-paper p-4">
-            <div className="font-mono text-[10px] uppercase opacity-70">The 30-Day Lock-in</div>
-            <div className="font-display text-2xl leading-tight mt-1">₹99 in. 30-day streak. 100% back.</div>
-            <div className="font-mono text-[11px] mt-2 opacity-80">
-              Coming soon · Put skin in the game.
-            </div>
-          </div>
+          <StreakChallenge />
 
           <div className="brutal-border bg-paper p-3 font-mono text-[10px] leading-relaxed">
             <b>PRIVACY:</b> Voice files never leave your device. Transcripts are processed in your browser and discarded after scoring. We store name, email, and numeric scores only.
