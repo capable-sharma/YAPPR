@@ -233,9 +233,9 @@ export function SessionEngine({
             <div className="font-mono text-xs mt-1">
               {micErr
                 ? micErr
-                : speechSupported()
-                  ? "Mic on Chrome/Edge gets you full transcript. Safari works but transcript may be limited."
-                  : "Live transcription not supported in this browser. Try Chrome."}
+                : speechOk === false
+                  ? "Live transcription not supported in this browser. Try Chrome."
+                  : "Mic on Chrome/Edge gets you full transcript. Safari works but transcript may be limited."}
             </div>
           </div>
           {!user && (
