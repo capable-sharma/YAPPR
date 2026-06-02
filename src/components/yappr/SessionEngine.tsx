@@ -5,6 +5,7 @@ import { AuthModal, type YapprUser } from "./AuthModal";
 import { ResultsDashboard } from "./ResultsDashboard";
 import { startRecording, speechSupported } from "@/lib/yappr-recorder";
 import { analyzeTranscript, type AnalysisResult } from "@/lib/yappr-analysis";
+import { markTodayComplete } from "@/lib/yappr-streak";
 
 type Phase = "idle" | "spinning" | "card" | "prep" | "flash" | "record" | "processing" | "auth" | "results";
 
@@ -33,8 +34,10 @@ export function SessionEngine({
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [user, setUser] = useState<YapprUser | null>(null);
   const [micErr, setMicErr] = useState<string | null>(null);
+  const [speechOk, setSpeechOk] = useState<boolean | null>(null);
 
   useEffect(() => {
+    setSpeechOk(speechSupported());
     try {
       const raw = localStorage.getItem("yappr.user");
       if (raw) setUser(JSON.parse(raw));
@@ -106,6 +109,10 @@ export function SessionEngine({
     const r = analyzeTranscript(t.transcript, t.durationSec, { requiredWord });
     setResult(r);
     setPhase("results");
+    // Count toward the 30-day lock-in: one valid recording per IST day.
+    if (t.transcript.trim().split(/\s+/).filter(Boolean).length >= 10) {
+      markTodayComplete();
+    }
   };
 
   const onAuth = (u: YapprUser) => {
@@ -226,9 +233,9 @@ export function SessionEngine({
             <div className="font-mono text-xs mt-1">
               {micErr
                 ? micErr
-                : speechSupported()
-                  ? "Mic on Chrome/Edge gets you full transcript. Safari works but transcript may be limited."
-                  : "Live transcription not supported in this browser. Try Chrome."}
+                : speechOk === false
+                  ? "Live transcription not supported in this browser. Try Chrome."
+                  : "Mic on Chrome/Edge gets you full transcript. Safari works but transcript may be limited."}
             </div>
           </div>
           {!user && (
