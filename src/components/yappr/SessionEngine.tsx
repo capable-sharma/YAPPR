@@ -5,6 +5,7 @@ import { AuthModal, type YapprUser } from "./AuthModal";
 import { ResultsDashboard } from "./ResultsDashboard";
 import { startRecording, speechSupported } from "@/lib/yappr-recorder";
 import { analyzeTranscript, type AnalysisResult } from "@/lib/yappr-analysis";
+import { markTodayComplete } from "@/lib/yappr-streak";
 
 type Phase = "idle" | "spinning" | "card" | "prep" | "flash" | "record" | "processing" | "auth" | "results";
 
