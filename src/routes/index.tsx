@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { TabSwitcher } from "@/components/yappr/TabSwitcher";
 import { SessionEngine } from "@/components/yappr/SessionEngine";
 import { FrameworkAccordion } from "@/components/yappr/FrameworkAccordion";
+import { StreakChallenge } from "@/components/yappr/StreakChallenge";
 import {
   TOPICS, TOPIC_CATEGORIES,
   INTERVIEW_QUESTIONS, INTERVIEW_CATEGORIES,
