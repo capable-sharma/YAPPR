@@ -5,7 +5,7 @@ import { AuthModal, type YapprUser } from "./AuthModal";
 import { ResultsDashboard } from "./ResultsDashboard";
 import { startRecording, speechSupported } from "@/lib/yappr-recorder";
 import { analyzeTranscript, type AnalysisResult } from "@/lib/yappr-analysis";
-import { markTodayComplete } from "@/lib/yappr-streak";
+import { markTodayComplete, loadStreak, hasIdealRewrite } from "@/lib/yappr-streak";
 import { analyzeContent, type ContentAnalysis } from "@/lib/yappr-ai.functions";
 
 type Phase = "idle" | "spinning" | "card" | "prep" | "flash" | "record" | "processing" | "auth" | "results";
@@ -138,6 +138,7 @@ export function SessionEngine({
             weaknesses: [],
             counterPoints: [],
             betterAngle: "",
+            idealRewrite: "",
           });
         })
         .finally(() => setContentLoading(false));
@@ -227,7 +228,17 @@ export function SessionEngine({
 
       {/* Phase strip */}
       {phase === "prep" && (
-        <CountdownTimer seconds={30} variant="prep" onDone={onPrepDone} />
+        <div className="flex flex-col md:flex-row gap-2 items-stretch">
+          <div className="flex-1">
+            <CountdownTimer seconds={30} variant="prep" onDone={onPrepDone} />
+          </div>
+          <button
+            onClick={onPrepDone}
+            className="bg-yappr-green text-ink brutal-border brutal-shadow brutal-press font-display text-xl px-4 py-3 whitespace-nowrap"
+          >
+            SKIP · RECORD NOW →
+          </button>
+        </div>
       )}
 
       {phase === "flash" && (
@@ -265,6 +276,7 @@ export function SessionEngine({
           content={content}
           contentLoading={contentLoading}
           mode={mode}
+          idealRewriteUnlocked={hasIdealRewrite(loadStreak())}
         />
       )}
 
