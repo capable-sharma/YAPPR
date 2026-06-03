@@ -59,7 +59,8 @@ Return JSON with EXACTLY this shape:
   "strengths": ["<2-3 short bullets on what landed in their argument>"],
   "weaknesses": ["<2-3 short bullets on weak reasoning, vague claims, missing evidence>"],
   "counterPoints": ["<2 sharp counter-arguments or follow-up questions they failed to address>"],
-  "betterAngle": "<one concrete sharper angle, framework, or example they should have used>"
+  "betterAngle": "<one concrete sharper angle, framework, or example they should have used>",
+  "idealRewrite": "<a fully written ideal 45-80 second spoken-style answer to the PROMPT — punchy, specific, Indian-context where relevant, ready to read aloud. Plain prose, no markdown, no bullet points, no headings.>"
 }`;
 
     try {
@@ -95,6 +96,7 @@ Return JSON with EXACTLY this shape:
         weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses.slice(0, 4).map(String) : [],
         counterPoints: Array.isArray(parsed.counterPoints) ? parsed.counterPoints.slice(0, 4).map(String) : [],
         betterAngle: String(parsed.betterAngle ?? ""),
+        idealRewrite: String(parsed.idealRewrite ?? ""),
       };
     } catch (e) {
       console.error(e);
