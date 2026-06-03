@@ -7,7 +7,7 @@ import { StreakChallenge } from "@/components/yappr/StreakChallenge";
 import {
   TOPICS, TOPIC_CATEGORIES,
   INTERVIEW_QUESTIONS, INTERVIEW_CATEGORIES,
-  VOCAB_DECKS, VOCAB_WORDS,
+  VOCAB_DECKS, VOCAB_WORDS, RANDOM_TRACK,
   type Tab,
 } from "@/lib/yappr-data";
 
@@ -26,15 +26,15 @@ export const Route = createFileRoute("/")({
 function YapprApp() {
   const [tab, setTab] = useState<Tab>("topics");
 
-  // Topics
-  const [topicCat, setTopicCat] = useState<string>(TOPIC_CATEGORIES[0]);
+  // Topics — default to the Random Mix track
+  const [topicCat, setTopicCat] = useState<string>(RANDOM_TRACK);
   const [debate, setDebate] = useState<"off" | "for" | "against">("off");
 
   // Interview
   const [intvCat, setIntvCat] = useState<string>(INTERVIEW_CATEGORIES[0]);
 
-  // Vocab
-  const [vocabDeck, setVocabDeck] = useState<string>(VOCAB_DECKS[0]);
+  // Vocab — default to Random Mix deck
+  const [vocabDeck, setVocabDeck] = useState<string>(RANDOM_TRACK);
   const [vocabIdx, setVocabIdx] = useState(0);
   const vocabWord = VOCAB_WORDS[vocabDeck][vocabIdx % VOCAB_WORDS[vocabDeck].length];
 
