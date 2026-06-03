@@ -1,20 +1,81 @@
-// Frontend-only mock for the YAPPR 30-Day Lock-in challenge.
+// Frontend-only mock for the YAPPR Lock-in challenges.
 // All data lives in localStorage. No real money moves.
 
-const KEY = "yappr.streak.v1";
-const DEPOSIT_AMOUNT = 99; // INR
-const TARGET_DAYS = 30;
+const KEY = "yappr.streak.v2";
+
+export type StreakPlan = "free" | "p49" | "p99";
+
+export interface PlanConfig {
+  id: StreakPlan;
+  label: string;
+  amount: number; // INR
+  days: number;
+  refundable: boolean;
+  unlocksIdealRewrite: boolean;
+  blurb: string;
+  perks: string[];
+}
+
+export const PLANS: Record<StreakPlan, PlanConfig> = {
+  free: {
+    id: "free",
+    label: "Free Yapper",
+    amount: 0,
+    days: 0,
+    refundable: false,
+    unlocksIdealRewrite: false,
+    blurb: "Just sign in. Forge your voice.",
+    perks: [
+      "Unlimited 60s topic & vocab takes",
+      "60s impromptu + debate mode",
+      "Quad-Pillar delivery score",
+      "Personal session history",
+    ],
+  },
+  p49: {
+    id: "p49",
+    label: "7-Day Lock-in",
+    amount: 49,
+    days: 7,
+    refundable: false,
+    unlocksIdealRewrite: true,
+    blurb: "₹49 motivation deposit. 7 days. No refund — pure skin in the game.",
+    perks: [
+      "Everything in Free",
+      "Ideal Rewrite script after every take",
+      "Streak badge on profile",
+      "7-day discipline ladder",
+    ],
+  },
+  p99: {
+    id: "p99",
+    label: "30-Day Lock-in",
+    amount: 99,
+    days: 30,
+    refundable: true,
+    unlocksIdealRewrite: true,
+    blurb: "₹99 deposit. Finish 30/30 → 100% refund. Miss a day → forfeit.",
+    perks: [
+      "Everything in 7-Day",
+      "Ideal Rewrite script after every take",
+      "100% refund on full 30-day streak",
+      "YAPPR Hall of Streaks entry",
+    ],
+  },
+};
 
 export interface StreakState {
+  plan: StreakPlan | null;
   deposited: boolean;
-  depositTs: number | null;     // when ₹99 was "paid"
+  depositTs: number | null;
   refunded: boolean;
   refundTs: number | null;
-  startDate: string | null;     // IST yyyy-mm-dd of first deposit day
-  completedDates: string[];     // sorted unique IST dates with a valid recording
+  startDate: string | null;
+  completedDates: string[];
 }
 
 const EMPTY: StreakState = {
+  plan: null,
   deposited: false,
   depositTs: null,
   refunded: false,
@@ -23,11 +84,8 @@ const EMPTY: StreakState = {
   completedDates: [],
 };
 
-export const STREAK_CONFIG = { DEPOSIT_AMOUNT, TARGET_DAYS };
-
 /** IST yyyy-mm-dd for a given Date (default = now). */
 export function istDateKey(d: Date = new Date()): string {
-  // IST is UTC+5:30, no DST
   const utcMs = d.getTime() + d.getTimezoneOffset() * 60_000;
   const ist = new Date(utcMs + 5.5 * 60 * 60_000);
   const y = ist.getUTCFullYear();
@@ -54,13 +112,15 @@ function save(s: StreakState) {
   }
 }
 
-export function depositMock(): StreakState {
+export function activatePlan(plan: StreakPlan): StreakState {
   const today = istDateKey();
+  const cfg = PLANS[plan];
   const s: StreakState = {
     ...EMPTY,
-    deposited: true,
-    depositTs: Date.now(),
-    startDate: today,
+    plan,
+    deposited: cfg.amount > 0,
+    depositTs: cfg.amount > 0 ? Date.now() : null,
+    startDate: cfg.days > 0 ? today : null,
     completedDates: [],
   };
   save(s);
@@ -69,7 +129,7 @@ export function depositMock(): StreakState {
 
 export function markTodayComplete(): StreakState {
   const s = loadStreak();
-  if (!s.deposited || s.refunded) return s;
+  if (!s.plan || s.refunded) return s;
   const today = istDateKey();
   if (s.completedDates.includes(today)) return s;
   const next: StreakState = {
@@ -93,13 +153,11 @@ export function resetStreak(): StreakState {
   return { ...EMPTY };
 }
 
-/** Returns 30 IST date keys starting from startDate. */
-export function getChallengeDays(startDate: string): string[] {
+export function getChallengeDays(startDate: string, days: number): string[] {
   const out: string[] = [];
   const [y, m, d] = startDate.split("-").map(Number);
-  // Build noon-IST anchor to dodge DST/offset edge cases
-  const base = new Date(Date.UTC(y, m - 1, d, 6, 30, 0)); // 12:00 IST
-  for (let i = 0; i < TARGET_DAYS; i++) {
+  const base = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+  for (let i = 0; i < days; i++) {
     const dt = new Date(base.getTime() + i * 24 * 60 * 60_000);
     out.push(istDateKey(dt));
   }
@@ -111,12 +169,13 @@ export function getProgress(s: StreakState): {
   target: number;
   todayDone: boolean;
   daysInWindow: string[];
-  brokenOn: string | null; // first scheduled past date the user missed
+  brokenOn: string | null;
 } {
-  if (!s.deposited || !s.startDate) {
-    return { done: 0, target: TARGET_DAYS, todayDone: false, daysInWindow: [], brokenOn: null };
+  if (!s.plan || !s.startDate) {
+    return { done: 0, target: 0, todayDone: false, daysInWindow: [], brokenOn: null };
   }
-  const days = getChallengeDays(s.startDate);
+  const target = PLANS[s.plan].days;
+  const days = getChallengeDays(s.startDate, target);
   const today = istDateKey();
   const setDone = new Set(s.completedDates);
   let brokenOn: string | null = null;
@@ -125,16 +184,16 @@ export function getProgress(s: StreakState): {
     if (!setDone.has(d)) { brokenOn = d; break; }
   }
   const done = days.filter((d) => setDone.has(d)).length;
-  return {
-    done,
-    target: TARGET_DAYS,
-    todayDone: setDone.has(today),
-    daysInWindow: days,
-    brokenOn,
-  };
+  return { done, target, todayDone: setDone.has(today), daysInWindow: days, brokenOn };
 }
 
 export function isComplete(s: StreakState): boolean {
+  if (!s.plan) return false;
   const p = getProgress(s);
-  return s.deposited && !p.brokenOn && p.done >= TARGET_DAYS;
+  return p.target > 0 && !p.brokenOn && p.done >= p.target;
+}
+
+/** Does the current plan unlock the AI Ideal Rewrite block? */
+export function hasIdealRewrite(s: StreakState): boolean {
+  return !!s.plan && PLANS[s.plan].unlocksIdealRewrite;
 }
