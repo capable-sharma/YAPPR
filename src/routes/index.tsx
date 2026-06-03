@@ -55,15 +55,14 @@ function YapprApp() {
       <header className="sticky top-0 z-30 bg-yappr-yellow brutal-border-thick border-t-0 border-x-0 border-b-[6px]">
         <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex flex-col md:flex-row items-center md:justify-between gap-3">
           <div className="flex items-center gap-3 self-start md:self-center">
+            <LogoMark />
             <div className="font-display text-4xl md:text-5xl leading-none">YAPPR</div>
             <div className="font-mono text-[10px] uppercase bg-ink text-paper px-2 py-1 hidden md:block">
               v0 · Forge mode
             </div>
           </div>
           <TabSwitcher value={tab} onChange={setTab} />
-          <div className="font-mono text-[10px] uppercase tracking-widest opacity-70 hidden md:block">
-            Audio deleted instantly · Scores only
-          </div>
+          <div className="hidden md:block w-[180px]" aria-hidden />
         </div>
       </header>
 
