@@ -62,6 +62,7 @@ export function ResultsDashboard({
   content,
   contentLoading,
   mode,
+  idealRewriteUnlocked = false,
 }: {
   result: AnalysisResult;
   prompt: string;
@@ -69,6 +70,7 @@ export function ResultsDashboard({
   content?: ContentAnalysis | null;
   contentLoading?: boolean;
   mode?: SessionMode;
+  idealRewriteUnlocked?: boolean;
 }) {
   const { scores, tokens, wpm, wordCount, durationSec, microAction } = result;
   const emphasizeContent = mode === "debate" || mode === "interview";
@@ -95,6 +97,15 @@ export function ResultsDashboard({
 
       {/* AI Substance Review — judges what they SAID, not how */}
       <ContentReview content={content ?? null} loading={!!contentLoading} emphasize={emphasizeContent} mode={mode} />
+
+      {/* Ideal Rewrite — paid tier only */}
+      <IdealRewrite
+        unlocked={idealRewriteUnlocked}
+        text={content?.idealRewrite ?? ""}
+        loading={!!contentLoading}
+      />
+
+
 
 
       {/* Transcript */}
@@ -239,6 +250,57 @@ function ReviewList({ title, items, tone }: { title: string; items: string[]; to
       <ul className="font-mono text-sm leading-snug space-y-1 list-disc pl-5">
         {items.map((s, i) => <li key={i}>{s}</li>)}
       </ul>
+    </div>
+  );
+}
+
+function IdealRewrite({ unlocked, text, loading }: { unlocked: boolean; text: string; loading: boolean }) {
+  if (!unlocked) {
+    return (
+      <div className="brutal-border-thick bg-paper p-4 relative overflow-hidden">
+        <div className="absolute top-2 right-2 bg-ink text-paper font-mono text-[9px] uppercase px-2 py-0.5 brutal-border">
+          🔒 ₹49 / ₹99
+        </div>
+        <div className="font-mono text-[10px] uppercase opacity-60">Ideal Rewrite</div>
+        <div className="font-display text-2xl mt-1">The script you should have said.</div>
+        <div className="font-mono text-xs mt-2 opacity-70 leading-relaxed">
+          Every take, our AI writes the perfect 60s version of YOUR answer to THIS prompt — punchy, structured, ready to read aloud.
+          Unlocks on the 7-day (₹49) or 30-day (₹99) lock-in tier.
+        </div>
+        <div className="mt-3 brutal-border bg-paper/60 p-3 font-mono text-xs leading-relaxed blur-sm select-none">
+          The single biggest issue here is framing. A sharper opener would be: "Three reasons this matters now —"
+          and you'd anchor on a 2025 data point, a counter-example, and a forward-looking ask. End with a one-line stance,
+          not a hedge. That's the version that lands in a placement panel.
+        </div>
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-blue text-paper p-4 animate-pulse">
+        <div className="font-mono text-[10px] uppercase opacity-80">Ideal Rewrite</div>
+        <div className="font-display text-2xl mt-1">Drafting the perfect version…</div>
+      </div>
+    );
+  }
+  if (!text) return null;
+  return (
+    <div className="brutal-border-thick brutal-shadow-lg bg-yappr-green text-ink p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="font-mono text-[10px] uppercase">Ideal Rewrite · read aloud</div>
+        <button
+          onClick={() => { try { navigator.clipboard?.writeText(text); } catch { /* */ } }}
+          className="bg-ink text-paper brutal-border brutal-press font-mono text-[10px] px-2 py-1"
+        >
+          COPY
+        </button>
+      </div>
+      <div className="font-display text-xl md:text-2xl leading-snug mt-2 whitespace-pre-wrap">
+        {text}
+      </div>
+      <div className="font-mono text-[10px] mt-3 opacity-70">
+        Practice this aloud 3× then re-pull the lever for muscle memory.
+      </div>
     </div>
   );
 }
