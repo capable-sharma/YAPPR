@@ -93,6 +93,10 @@ export function ResultsDashboard({
         <div className="font-display text-xl">{prompt}</div>
       </div>
 
+      {/* AI Substance Review — judges what they SAID, not how */}
+      <ContentReview content={content ?? null} loading={!!contentLoading} emphasize={emphasizeContent} mode={mode} />
+
+
       {/* Transcript */}
       <div className="brutal-border brutal-shadow bg-paper p-4">
         <div className="flex items-center justify-between mb-2">
@@ -140,6 +144,101 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
       <div className="font-mono text-[10px] uppercase opacity-60">{label}</div>
       <div className="font-display text-3xl leading-none mt-1">{value}</div>
       {hint && <div className="font-mono text-[10px] opacity-60 mt-1">{hint}</div>}
+    </div>
+  );
+}
+
+function ContentReview({
+  content, loading, emphasize, mode,
+}: {
+  content: ContentAnalysis | null;
+  loading: boolean;
+  emphasize: boolean;
+  mode?: SessionMode;
+}) {
+  const heading = mode === "debate"
+    ? "Argument Review"
+    : mode === "interview"
+      ? "Answer Review"
+      : "What You Said";
+  if (loading) {
+    return (
+      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-blue text-paper p-4">
+        <div className="font-mono text-[10px] uppercase opacity-80">AI Coach</div>
+        <div className="font-display text-2xl mt-1 animate-pulse">SCANNING YOUR ARGUMENT…</div>
+        <div className="font-mono text-xs mt-2 opacity-80">Grading ideas, evidence & angle.</div>
+      </div>
+    );
+  }
+  if (!content) {
+    return (
+      <div className="brutal-border bg-paper p-4">
+        <div className="font-mono text-[10px] uppercase opacity-60">AI Coach</div>
+        <div className="font-mono text-xs mt-1 opacity-70">
+          Speak at least 10 words to unlock content review.
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={[
+      "brutal-border-thick brutal-shadow-lg p-5",
+      emphasize ? "bg-ink text-paper" : "bg-paper",
+    ].join(" ")}>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-mono text-[10px] uppercase opacity-70">AI Coach · {heading}</div>
+          <div className="font-display text-2xl md:text-3xl leading-tight mt-1">{content.verdict}</div>
+        </div>
+        {content.contentScore > 0 && (
+          <div className={[
+            "brutal-border px-3 py-2 text-center",
+            emphasize ? "bg-yappr-yellow text-ink" : "bg-ink text-paper",
+          ].join(" ")}>
+            <div className="font-mono text-[9px] uppercase opacity-80">Content</div>
+            <div className="font-display text-3xl leading-none">{content.contentScore}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+        {content.strengths.length > 0 && (
+          <ReviewList title="What Landed" items={content.strengths} tone="green" />
+        )}
+        {content.weaknesses.length > 0 && (
+          <ReviewList title="What Wobbled" items={content.weaknesses} tone="magenta" />
+        )}
+      </div>
+
+      {content.counterPoints.length > 0 && (
+        <div className="mt-3 brutal-border bg-yappr-yellow text-ink p-3">
+          <div className="font-mono text-[10px] uppercase mb-1">
+            {mode === "interview" ? "Follow-ups you didn't cover" : "Counter-points you didn't address"}
+          </div>
+          <ul className="font-mono text-sm leading-snug space-y-1 list-disc pl-5">
+            {content.counterPoints.map((c, i) => <li key={i}>{c}</li>)}
+          </ul>
+        </div>
+      )}
+
+      {content.betterAngle && (
+        <div className="mt-3 brutal-border bg-yappr-blue text-paper p-3">
+          <div className="font-mono text-[10px] uppercase opacity-80">Sharper Angle</div>
+          <div className="font-display text-xl leading-tight mt-1">{content.betterAngle}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewList({ title, items, tone }: { title: string; items: string[]; tone: "green" | "magenta" }) {
+  const bg = tone === "green" ? "bg-yappr-green text-ink" : "bg-yappr-magenta text-paper";
+  return (
+    <div className={`brutal-border p-3 ${bg}`}>
+      <div className="font-mono text-[10px] uppercase mb-1 opacity-90">{title}</div>
+      <ul className="font-mono text-sm leading-snug space-y-1 list-disc pl-5">
+        {items.map((s, i) => <li key={i}>{s}</li>)}
+      </ul>
     </div>
   );
 }
