@@ -14,11 +14,13 @@ export interface ContentAnalysis {
   weaknesses: string[];
   counterPoints: string[];
   betterAngle: string;
+  idealRewrite: string;
 }
 
 const FALLBACK: ContentAnalysis = {
   verdict: "Couldn't reach the AI coach. Try again in a moment.",
   contentScore: 0,
+  idealRewrite: "",
   strengths: [],
   weaknesses: [],
   counterPoints: [],
