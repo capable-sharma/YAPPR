@@ -135,8 +135,8 @@ function YapprApp() {
               category={vocabDeck}
               onCategoryChange={(d) => { setVocabDeck(d); setVocabIdx(0); }}
               mode="vocab"
-              recordSeconds={60}
-              badge="VOCAB · CONSTRAINT · 60s"
+              recordSeconds={30}
+              badge="VOCAB · CONSTRAINT · 30s"
               requiredWord={vocabWord.word}
             />
           )}
