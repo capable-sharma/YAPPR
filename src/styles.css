@@ -57,8 +57,8 @@
 :root {
   --radius: 0px;
 
-  --ink: oklch(0 0 0);
-  --paper: oklch(1 0 0);
+  --ink: oklch(0.16 0.01 80);
+  --paper: oklch(0.965 0.028 85);   /* warm cream — easier on the eyes than #fff */
 
   --yappr-yellow: oklch(0.92 0.20 100);   /* cyber yellow */
   --yappr-magenta: oklch(0.65 0.30 350);  /* hot magenta */

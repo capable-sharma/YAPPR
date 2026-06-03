@@ -55,15 +55,14 @@ function YapprApp() {
       <header className="sticky top-0 z-30 bg-yappr-yellow brutal-border-thick border-t-0 border-x-0 border-b-[6px]">
         <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex flex-col md:flex-row items-center md:justify-between gap-3">
           <div className="flex items-center gap-3 self-start md:self-center">
+            <LogoMark />
             <div className="font-display text-4xl md:text-5xl leading-none">YAPPR</div>
             <div className="font-mono text-[10px] uppercase bg-ink text-paper px-2 py-1 hidden md:block">
               v0 · Forge mode
             </div>
           </div>
           <TabSwitcher value={tab} onChange={setTab} />
-          <div className="font-mono text-[10px] uppercase tracking-widest opacity-70 hidden md:block">
-            Audio deleted instantly · Scores only
-          </div>
+          <div className="hidden md:block w-[180px]" aria-hidden />
         </div>
       </header>
 
@@ -95,7 +94,9 @@ function YapprApp() {
               categories={[...TOPIC_CATEGORIES]}
               category={topicCat}
               onCategoryChange={setTopicCat}
-              badge={debate === "off" ? "IMPROMPTU" : `DEBATE · ${debate.toUpperCase()}`}
+              mode={debate === "off" ? "topic" : "debate"}
+              recordSeconds={60}
+              badge={debate === "off" ? "IMPROMPTU · 60s" : `DEBATE · ${debate.toUpperCase()} · 60s`}
               topPanel={
                 <div className="flex items-center gap-1 brutal-border bg-paper p-1 ml-auto">
                   {(["off", "for", "against"] as const).map((s) => (
@@ -122,7 +123,9 @@ function YapprApp() {
               categories={[...INTERVIEW_CATEGORIES]}
               category={intvCat}
               onCategoryChange={setIntvCat}
-              badge="INTERVIEW · 60s"
+              mode="interview"
+              recordSeconds={90}
+              badge="INTERVIEW · 90s"
             />
           )}
           {tab === "vocab" && (
@@ -131,7 +134,9 @@ function YapprApp() {
               categories={[...VOCAB_DECKS]}
               category={vocabDeck}
               onCategoryChange={(d) => { setVocabDeck(d); setVocabIdx(0); }}
-              badge="VOCAB · CONSTRAINT"
+              mode="vocab"
+              recordSeconds={60}
+              badge="VOCAB · CONSTRAINT · 60s"
               requiredWord={vocabWord.word}
             />
           )}
@@ -141,6 +146,19 @@ function YapprApp() {
       <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60">
         © YAPPR · Built loud in India · For TPOs & MBA aspirants who hate stage fright.
       </footer>
+    </div>
+  );
+}
+
+function LogoMark() {
+  // Brutalist mic-as-Y mark — sits inside the yellow header.
+  return (
+    <div className="brutal-border bg-ink p-1.5 shrink-0" aria-label="YAPPR logo">
+      <svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
+        <rect x="0" y="0" width="40" height="40" fill="var(--yappr-yellow)" />
+        <path d="M8 6 L20 22 L32 6" stroke="var(--ink)" strokeWidth="5" fill="none" strokeLinecap="square" />
+        <rect x="17" y="20" width="6" height="14" fill="var(--yappr-magenta)" stroke="var(--ink)" strokeWidth="2" />
+      </svg>
     </div>
   );
 }
