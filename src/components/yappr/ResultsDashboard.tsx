@@ -1,4 +1,6 @@
 import type { AnalysisResult, TranscriptToken } from "@/lib/yappr-analysis";
+import type { ContentAnalysis } from "@/lib/yappr-ai.functions";
+import type { SessionMode } from "./SessionEngine";
 
 function ScoreDial({ label, value, color }: { label: string; value: number; color: string }) {
   const r = 42;
@@ -57,12 +59,19 @@ export function ResultsDashboard({
   result,
   prompt,
   onRetry,
+  content,
+  contentLoading,
+  mode,
 }: {
   result: AnalysisResult;
   prompt: string;
   onRetry: () => void;
+  content?: ContentAnalysis | null;
+  contentLoading?: boolean;
+  mode?: SessionMode;
 }) {
   const { scores, tokens, wpm, wordCount, durationSec, microAction } = result;
+  const emphasizeContent = mode === "debate" || mode === "interview";
 
   return (
     <div className="flex flex-col gap-4">
