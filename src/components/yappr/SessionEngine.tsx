@@ -6,25 +6,33 @@ import { ResultsDashboard } from "./ResultsDashboard";
 import { startRecording, speechSupported } from "@/lib/yappr-recorder";
 import { analyzeTranscript, type AnalysisResult } from "@/lib/yappr-analysis";
 import { markTodayComplete } from "@/lib/yappr-streak";
+import { analyzeContent, type ContentAnalysis } from "@/lib/yappr-ai.functions";
 
 type Phase = "idle" | "spinning" | "card" | "prep" | "flash" | "record" | "processing" | "auth" | "results";
+
+export type SessionMode = "topic" | "debate" | "interview" | "vocab";
 
 interface SessionEngineProps {
   candidates: string[];
   categories: string[];
   category: string;
   onCategoryChange: (c: string) => void;
-  /** Optional secondary control like Debate toggle or vocab spotlight */
   topPanel?: React.ReactNode;
-  /** Word the user must include (vocab mode) */
   requiredWord?: string;
-  /** Optional decoration above the prompt */
   badge?: string;
+  /** Mode controls AI grading emphasis */
+  mode?: SessionMode;
+  /** Speak duration in seconds. Defaults to 60. Interview = 90. */
+  recordSeconds?: number;
 }
+
+const STREAK_MIN_SECONDS = 45;
 
 export function SessionEngine({
   candidates, categories, category, onCategoryChange,
   topPanel, requiredWord, badge,
+  mode = "topic",
+  recordSeconds = 60,
 }: SessionEngineProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [prompt, setPrompt] = useState<string>("Pull the lever to start.");
@@ -32,6 +40,8 @@ export function SessionEngine({
   const [recHandle, setRecHandle] = useState<Awaited<ReturnType<typeof startRecording>> | null>(null);
   const [pendingTranscript, setPendingTranscript] = useState<{ transcript: string; durationSec: number } | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [content, setContent] = useState<ContentAnalysis | null>(null);
+  const [contentLoading, setContentLoading] = useState(false);
   const [user, setUser] = useState<YapprUser | null>(null);
   const [micErr, setMicErr] = useState<string | null>(null);
   const [speechOk, setSpeechOk] = useState<boolean | null>(null);
@@ -44,15 +54,14 @@ export function SessionEngine({
     } catch { /* */ }
   }, []);
 
-  // Reset session when tab/category changes
   useEffect(() => {
     setPhase("idle");
     setPrompt("Pull the lever to start.");
     setResult(null);
+    setContent(null);
   }, [categories.join("|"), category]);
 
   const reel = useMemo(() => {
-    // Shuffle some candidates for visual scroll
     const arr = [...candidates];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -64,6 +73,7 @@ export function SessionEngine({
   const handlePull = () => {
     if (phase !== "idle" && phase !== "card" && phase !== "results") return;
     setResult(null);
+    setContent(null);
     setPhase("spinning");
     setReelOffset(0);
     const picked = candidates[Math.floor(Math.random() * candidates.length)];
@@ -109,9 +119,28 @@ export function SessionEngine({
     const r = analyzeTranscript(t.transcript, t.durationSec, { requiredWord });
     setResult(r);
     setPhase("results");
-    // Count toward the 30-day lock-in: one valid recording per IST day.
-    if (t.transcript.trim().split(/\s+/).filter(Boolean).length >= 10) {
+    // 45-second floor for streak credit.
+    if (t.durationSec >= STREAK_MIN_SECONDS && r.wordCount >= 30) {
       markTodayComplete();
+    }
+    // Kick off AI substance review (best-effort, non-blocking for UI).
+    if (r.wordCount >= 10) {
+      setContentLoading(true);
+      setContent(null);
+      analyzeContent({ data: { transcript: r.rawText, prompt, mode } })
+        .then((c) => setContent(c))
+        .catch((e) => {
+          console.error(e);
+          setContent({
+            verdict: "AI coach offline — delivery scores still valid.",
+            contentScore: 0,
+            strengths: [],
+            weaknesses: [],
+            counterPoints: [],
+            betterAngle: "",
+          });
+        })
+        .finally(() => setContentLoading(false));
     }
   };
 
@@ -123,6 +152,7 @@ export function SessionEngine({
   const reset = () => {
     setPhase("idle");
     setResult(null);
+    setContent(null);
     setPrompt("Pull the lever to start.");
   };
 
@@ -141,52 +171,58 @@ export function SessionEngine({
         {topPanel}
       </div>
 
-      {/* Prompt / Reel */}
-      <div className="brutal-border-thick brutal-shadow-lg bg-paper min-h-[180px] md:min-h-[220px] relative overflow-hidden">
-        {phase === "spinning" ? (
-          <div className="h-[180px] md:h-[220px] overflow-hidden relative">
-            <div
-              className="absolute inset-x-0 top-0 animate-reel"
-              style={{ transform: `translateY(${reelOffset}px)` }}
-            >
-              {reel.concat(reel).map((t, i) => (
-                <div key={i} className="px-5 py-6 border-b-4 border-ink font-display text-2xl md:text-3xl">
-                  {t}
-                </div>
-              ))}
+      {/* Prompt + Lever rail */}
+      <div className="flex items-stretch gap-4">
+        <div className="brutal-border-thick brutal-shadow-lg bg-paper min-h-[180px] md:min-h-[240px] relative overflow-hidden flex-1">
+          {phase === "spinning" ? (
+            <div className="h-[180px] md:h-[240px] overflow-hidden relative">
+              <div
+                className="absolute inset-x-0 top-0 animate-reel"
+                style={{ transform: `translateY(${reelOffset}px)` }}
+              >
+                {reel.concat(reel).map((t, i) => (
+                  <div key={i} className="px-5 py-6 border-b-4 border-ink font-display text-2xl md:text-3xl">
+                    {t}
+                  </div>
+                ))}
+              </div>
+              <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-paper to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-paper to-transparent pointer-events-none" />
             </div>
-            <div className="absolute inset-x-0 top-0 h-12 bg-gradient-to-b from-paper to-transparent pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-paper to-transparent pointer-events-none" />
-          </div>
-        ) : (
-          <div className="p-5 md:p-7 flex flex-col gap-3">
-            {badge && (
-              <div className="self-start font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-2 py-1">
-                {badge}
-              </div>
-            )}
-            {requiredWord && phase !== "results" && (
-              <VocabSpotlight word={requiredWord} />
-            )}
-            <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
-            {phase === "card" && (
-              <div className="flex flex-wrap items-center gap-3 mt-2">
-                <button
-                  onClick={beginPrep}
-                  className="bg-yappr-blue text-paper brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
-                >
-                  START 30s PREP →
-                </button>
-                <button
-                  onClick={handlePull}
-                  className="bg-paper brutal-border brutal-press font-display text-xl px-3 py-2"
-                >
-                  RE-SPIN
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+          ) : (
+            <div className="p-5 md:p-7 flex flex-col gap-3">
+              {badge && (
+                <div className="self-start font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-2 py-1">
+                  {badge}
+                </div>
+              )}
+              {requiredWord && phase !== "results" && (
+                <VocabSpotlight word={requiredWord} />
+              )}
+              <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
+              {phase === "card" && (
+                <div className="flex flex-wrap items-center gap-3 mt-2">
+                  <button
+                    onClick={beginPrep}
+                    className="bg-yappr-blue text-paper brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
+                  >
+                    START 30s PREP →
+                  </button>
+                  <span className="font-mono text-[11px] opacity-60">
+                    or pull the lever again to re-spin
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="hidden md:flex">
+          <Lever
+            disabled={!["idle", "card", "results"].includes(phase)}
+            onPull={handlePull}
+            label="SPIN"
+          />
+        </div>
       </div>
 
       {/* Phase strip */}
@@ -202,7 +238,7 @@ export function SessionEngine({
 
       {phase === "record" && (
         <div className="flex flex-col gap-3">
-          <CountdownTimer seconds={60} variant="record" onDone={endRecording} />
+          <CountdownTimer seconds={recordSeconds} variant="record" onDone={endRecording} />
           <button
             onClick={endRecording}
             className="bg-ink text-paper brutal-border brutal-shadow brutal-press font-display text-3xl py-4 flex items-center justify-center gap-3"
@@ -222,14 +258,26 @@ export function SessionEngine({
       {phase === "auth" && <AuthModal onSubmit={onAuth} />}
 
       {phase === "results" && result && (
-        <ResultsDashboard result={result} prompt={prompt} onRetry={reset} />
+        <ResultsDashboard
+          result={result}
+          prompt={prompt}
+          onRetry={reset}
+          content={content}
+          contentLoading={contentLoading}
+          mode={mode}
+        />
       )}
 
-      {/* Idle CTA + lever rail */}
+      {/* Status strip (mobile lever fallback included) */}
       <div className="flex items-stretch justify-between gap-4">
         <div className="flex-1 flex flex-col gap-2">
           <div className="brutal-border bg-yappr-yellow p-4">
-            <div className="font-display text-2xl leading-none">{micErr ? "MIC BLOCKED" : "READY"}</div>
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="font-display text-2xl leading-none">{micErr ? "MIC BLOCKED" : "READY"}</div>
+              <div className="font-mono text-[10px] uppercase opacity-70">
+                Speak {recordSeconds}s · streak needs {STREAK_MIN_SECONDS}s+
+              </div>
+            </div>
             <div className="font-mono text-xs mt-1">
               {micErr
                 ? micErr
@@ -238,22 +286,20 @@ export function SessionEngine({
                   : "Mic on Chrome/Edge gets you full transcript. Safari works but transcript may be limited."}
             </div>
           </div>
-          {!user && (
-            <div className="font-mono text-[11px] opacity-70">
-              Your audio is processed in-browser and deleted instantly. We only store your scores.
-            </div>
-          )}
           {user && (
             <div className="font-mono text-[11px] opacity-70">
               Signed in as <b>{user.name}</b>. Streak-ready.
             </div>
           )}
         </div>
-        <Lever
-          disabled={!["idle", "card", "results"].includes(phase)}
-          onPull={handlePull}
-          label="SPIN"
-        />
+        {/* Mobile-only lever */}
+        <div className="md:hidden">
+          <Lever
+            disabled={!["idle", "card", "results"].includes(phase)}
+            onPull={handlePull}
+            label="SPIN"
+          />
+        </div>
       </div>
     </div>
   );
