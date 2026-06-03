@@ -62,6 +62,7 @@ export function ResultsDashboard({
   content,
   contentLoading,
   mode,
+  idealRewriteUnlocked = false,
 }: {
   result: AnalysisResult;
   prompt: string;
@@ -69,6 +70,7 @@ export function ResultsDashboard({
   content?: ContentAnalysis | null;
   contentLoading?: boolean;
   mode?: SessionMode;
+  idealRewriteUnlocked?: boolean;
 }) {
   const { scores, tokens, wpm, wordCount, durationSec, microAction } = result;
   const emphasizeContent = mode === "debate" || mode === "interview";
@@ -95,6 +97,15 @@ export function ResultsDashboard({
 
       {/* AI Substance Review — judges what they SAID, not how */}
       <ContentReview content={content ?? null} loading={!!contentLoading} emphasize={emphasizeContent} mode={mode} />
+
+      {/* Ideal Rewrite — paid tier only */}
+      <IdealRewrite
+        unlocked={idealRewriteUnlocked}
+        text={content?.idealRewrite ?? ""}
+        loading={!!contentLoading}
+      />
+
+
 
 
       {/* Transcript */}
