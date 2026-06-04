@@ -24,6 +24,12 @@ interface SessionEngineProps {
   mode?: SessionMode;
   /** Speak duration in seconds. Defaults to 60. Interview = 90. */
   recordSeconds?: number;
+  /** Fired when the user pulls the lever — used by Vocab to advance the word. */
+  onPull?: () => void;
+  /** Optional content shown directly under the prompt (e.g. vocab meaning card). */
+  belowPromptSlot?: React.ReactNode;
+  /** Optional banner above the prompt card (e.g. trending-loading/empty state). */
+  abovePromptSlot?: React.ReactNode;
 }
 
 const STREAK_MIN_SECONDS = 45;
@@ -33,6 +39,7 @@ export function SessionEngine({
   topPanel, requiredWord, badge,
   mode = "topic",
   recordSeconds = 60,
+  onPull, belowPromptSlot, abovePromptSlot,
 }: SessionEngineProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [prompt, setPrompt] = useState<string>("Pull the lever to start.");
