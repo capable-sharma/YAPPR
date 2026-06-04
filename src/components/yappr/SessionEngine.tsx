@@ -183,6 +183,8 @@ export function SessionEngine({
         {topPanel}
       </div>
 
+      {abovePromptSlot}
+
       {/* Prompt + Lever rail */}
       <div className="flex items-stretch gap-4">
         <div className="brutal-border-thick brutal-shadow-lg bg-paper min-h-[180px] md:min-h-[240px] relative overflow-hidden flex-1">
@@ -212,6 +214,9 @@ export function SessionEngine({
                 <VocabSpotlight word={requiredWord} />
               )}
               <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
+              {belowPromptSlot && phase !== "results" && (
+                <div className="mt-1">{belowPromptSlot}</div>
+              )}
               {phase === "card" && (
                 <div className="flex flex-wrap items-center gap-3 mt-2">
                   <button
