@@ -1,8 +1,10 @@
 export type Tab = "topics" | "interview" | "vocab";
 
 export const RANDOM_TRACK = "Random Mix";
+export const TRENDING_TRACK = "🔥 Trending";
 
 export const TOPIC_CATEGORIES = [
+  TRENDING_TRACK,
   RANDOM_TRACK,
   "India & Politics",
   "Bollywood",
