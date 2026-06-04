@@ -82,10 +82,12 @@ export function SessionEngine({
     if (!candidates.length) return;
     setResult(null);
     setContent(null);
-    onPull?.();
+    const override = onPull?.();
     setPhase("spinning");
     setReelOffset(0);
-    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    const picked = typeof override === "string" && override
+      ? override
+      : candidates[Math.floor(Math.random() * candidates.length)];
     setTimeout(() => {
       setPrompt(picked);
       setPhase("card");
