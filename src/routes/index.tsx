@@ -1,23 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TabSwitcher } from "@/components/yappr/TabSwitcher";
 import { SessionEngine } from "@/components/yappr/SessionEngine";
 import { FrameworkAccordion } from "@/components/yappr/FrameworkAccordion";
 import { StreakChallenge } from "@/components/yappr/StreakChallenge";
+import { ProfileButton } from "@/components/yappr/ProfileButton";
 import {
   TOPICS, TOPIC_CATEGORIES,
   INTERVIEW_QUESTIONS, INTERVIEW_CATEGORIES,
-  VOCAB_DECKS, VOCAB_WORDS, RANDOM_TRACK,
+  VOCAB_DECKS, VOCAB_WORDS, RANDOM_TRACK, TRENDING_TRACK,
   type Tab,
 } from "@/lib/yappr-data";
+import { fetchTrendingTopics } from "@/lib/yappr-news.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "YAPPR — Your Speaking Slot Machine" },
-      { name: "description", content: "Forge elite communication skills under pressure. Built for Indian students, placements, GD prep & MBA interviews. Pull the lever, speak for 60 seconds, get scored." },
+      { name: "description", content: "Forge elite communication skills under pressure. Impromptu, Interview Prep & WordBuzz drills for Indian students, placements & MBA aspirants." },
       { property: "og:title", content: "YAPPR — Your Speaking Slot Machine" },
-      { property: "og:description", content: "The digital gym for communication. Random topics, interview prep, vocab drills. 60 seconds. No fluff." },
+      { property: "og:description", content: "The digital gym for communication. Trending impromptu topics, interview prep, vocab drills. 30–90 seconds. No fluff." },
     ],
   }),
   component: YapprApp,
@@ -26,9 +28,29 @@ export const Route = createFileRoute("/")({
 function YapprApp() {
   const [tab, setTab] = useState<Tab>("topics");
 
-  // Topics — default to the Random Mix track
-  const [topicCat, setTopicCat] = useState<string>(RANDOM_TRACK);
+  // Topics — default to TRENDING
+  const [topicCat, setTopicCat] = useState<string>(TRENDING_TRACK);
   const [debate, setDebate] = useState<"off" | "for" | "against">("off");
+  const [trending, setTrending] = useState<string[]>([]);
+  const [trendingState, setTrendingState] = useState<"loading" | "ready" | "empty">("loading");
+
+  useEffect(() => {
+    let alive = true;
+    setTrendingState("loading");
+    fetchTrendingTopics()
+      .then((r) => {
+        if (!alive) return;
+        const list = r.topics || [];
+        TOPICS[TRENDING_TRACK] = list;
+        setTrending(list);
+        setTrendingState(list.length ? "ready" : "empty");
+      })
+      .catch(() => {
+        if (!alive) return;
+        setTrendingState("empty");
+      });
+    return () => { alive = false; };
+  }, []);
 
   // Interview
   const [intvCat, setIntvCat] = useState<string>(INTERVIEW_CATEGORIES[0]);
@@ -36,33 +58,45 @@ function YapprApp() {
   // Vocab — default to Random Mix deck
   const [vocabDeck, setVocabDeck] = useState<string>(RANDOM_TRACK);
   const [vocabIdx, setVocabIdx] = useState(0);
-  const vocabWord = VOCAB_WORDS[vocabDeck][vocabIdx % VOCAB_WORDS[vocabDeck].length];
+  const vocabList = VOCAB_WORDS[vocabDeck];
+  const vocabWord = vocabList[vocabIdx % vocabList.length];
 
   const candidates = useMemo(() => {
     if (tab === "topics") {
-      const base = TOPICS[topicCat] ?? [];
+      const base = topicCat === TRENDING_TRACK ? trending : (TOPICS[topicCat] ?? []);
       if (debate === "off") return base;
       const stance = debate === "for" ? "ARGUE FOR: " : "ARGUE AGAINST: ";
       return base.map((t) => stance + t);
     }
     if (tab === "interview") return INTERVIEW_QUESTIONS[intvCat] ?? [];
-    return [`Define & use "${vocabWord.word}" in a 60-second story.`];
-  }, [tab, topicCat, debate, intvCat, vocabWord]);
+    return [`Define & use "${vocabWord.word}" in a 30-second story.`];
+  }, [tab, topicCat, debate, intvCat, vocabWord, trending]);
+
+  // Vocab tab cannot use TRENDING_TRACK — keep the deck list clean.
+  const vocabDecksList = useMemo(() => [...VOCAB_DECKS], []);
 
   return (
     <div className="min-h-screen bg-paper text-ink">
       {/* Sticky top nav */}
       <header className="sticky top-0 z-30 bg-yappr-yellow brutal-border-thick border-t-0 border-x-0 border-b-[6px]">
-        <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex flex-col md:flex-row items-center md:justify-between gap-3">
-          <div className="flex items-center gap-3 self-start md:self-center">
-            <LogoMark />
-            <div className="font-display text-4xl md:text-5xl leading-none">YAPPR</div>
-            <div className="font-mono text-[10px] uppercase bg-ink text-paper px-2 py-1 hidden md:block">
+        <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="font-display text-3xl md:text-5xl leading-none truncate">YAPPR</div>
+            <div className="font-mono text-[10px] uppercase bg-ink text-paper px-2 py-1 hidden md:inline-block">
               v0 · Forge mode
             </div>
           </div>
+          <ProfileButton />
+        </div>
+        <div className="mx-auto max-w-6xl px-3 md:px-6 pb-3 flex justify-center md:justify-start">
           <TabSwitcher value={tab} onChange={setTab} />
-          <div className="hidden md:block w-[180px]" aria-hidden />
+        </div>
+        {/* candy stripe */}
+        <div className="h-1.5 flex">
+          <div className="flex-1 bg-yappr-magenta" />
+          <div className="flex-1 bg-yappr-blue" />
+          <div className="flex-1 bg-yappr-green" />
+          <div className="flex-1 bg-ink" />
         </div>
       </header>
 
@@ -71,13 +105,7 @@ function YapprApp() {
         <aside className="flex flex-col gap-4 order-2 md:order-1">
           {tab === "topics" && <TopicsLeftPane />}
           {tab === "interview" && <FrameworkAccordion />}
-          {tab === "vocab" && <VocabLeftPane
-            decks={[...VOCAB_DECKS]}
-            deck={vocabDeck}
-            onDeck={(d) => { setVocabDeck(d); setVocabIdx(0); }}
-            word={vocabWord}
-            onSkip={() => setVocabIdx((i) => i + 1)}
-          />}
+          {tab === "vocab" && <VocabLeftPane />}
 
           <StreakChallenge />
 
@@ -96,7 +124,24 @@ function YapprApp() {
               onCategoryChange={setTopicCat}
               mode={debate === "off" ? "topic" : "debate"}
               recordSeconds={60}
-              badge={debate === "off" ? "IMPROMPTU · 60s" : `DEBATE · ${debate.toUpperCase()} · 60s`}
+              badge={
+                topicCat === TRENDING_TRACK
+                  ? (debate === "off" ? "🔥 TRENDING · 60s" : `🔥 TRENDING · ${debate.toUpperCase()} · 60s`)
+                  : (debate === "off" ? "IMPROMPTU · 60s" : `DEBATE · ${debate.toUpperCase()} · 60s`)
+              }
+              abovePromptSlot={
+                topicCat === TRENDING_TRACK && trendingState !== "ready" ? (
+                  <div className={[
+                    "brutal-border p-3 font-mono text-xs flex items-center gap-2",
+                    trendingState === "loading" ? "bg-yappr-yellow" : "bg-yappr-magenta text-paper",
+                  ].join(" ")}>
+                    <span className={trendingState === "loading" ? "animate-pulse" : ""}>●</span>
+                    {trendingState === "loading"
+                      ? "Pulling today's headlines from Indian news…"
+                      : "Couldn't reach the news wire. Switch to Random Mix or another track."}
+                  </div>
+                ) : null
+              }
               topPanel={
                 <div className="flex items-center gap-1 brutal-border bg-paper p-1 ml-auto">
                   {(["off", "for", "against"] as const).map((s) => (
@@ -131,34 +176,40 @@ function YapprApp() {
           {tab === "vocab" && (
             <SessionEngine
               candidates={candidates}
-              categories={[...VOCAB_DECKS]}
+              categories={vocabDecksList}
               category={vocabDeck}
               onCategoryChange={(d) => { setVocabDeck(d); setVocabIdx(0); }}
               mode="vocab"
               recordSeconds={30}
-              badge="VOCAB · CONSTRAINT · 30s"
+              badge="WORDBUZZ · 30s"
               requiredWord={vocabWord.word}
+              onPull={() => {
+                // Advance to the next word in the deck, return the matching prompt so
+                // the lever-pull lands on the new word (instead of repeating the old).
+                const nextIdx = (vocabIdx + 1) % vocabList.length;
+                setVocabIdx(nextIdx);
+                const w = vocabList[nextIdx];
+                return `Define & use "${w.word}" in a 30-second story.`;
+              }}
+              belowPromptSlot={
+                <div className="bg-yappr-green brutal-border p-3 font-mono text-sm leading-relaxed">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="font-display text-2xl">{vocabWord.word}</span>
+                    <span className="opacity-70">{vocabWord.ipa}</span>
+                    <span className="opacity-60">· {vocabWord.pos}</span>
+                  </div>
+                  <div className="mt-1.5"><b>Def:</b> {vocabWord.def}</div>
+                  <div className="opacity-80"><b>Ex:</b> "{vocabWord.ex}"</div>
+                </div>
+              }
             />
           )}
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60">
+      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60 text-center md:text-left">
         © YAPPR · Built loud in India · For TPOs & MBA aspirants who hate stage fright.
       </footer>
-    </div>
-  );
-}
-
-function LogoMark() {
-  // Brutalist mic-as-Y mark — sits inside the yellow header.
-  return (
-    <div className="brutal-border bg-ink p-1.5 shrink-0" aria-label="YAPPR logo">
-      <svg viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
-        <rect x="0" y="0" width="40" height="40" fill="var(--yappr-yellow)" />
-        <path d="M8 6 L20 22 L32 6" stroke="var(--ink)" strokeWidth="5" fill="none" strokeLinecap="square" />
-        <rect x="17" y="20" width="6" height="14" fill="var(--yappr-magenta)" stroke="var(--ink)" strokeWidth="2" />
-      </svg>
     </div>
   );
 }
@@ -192,47 +243,22 @@ function TopicsLeftPane() {
   );
 }
 
-function VocabLeftPane({
-  decks, deck, onDeck, word, onSkip,
-}: {
-  decks: string[];
-  deck: string;
-  onDeck: (d: string) => void;
-  word: { word: string; ipa: string; pos: string; def: string; ex: string };
-  onSkip: () => void;
-}) {
+function VocabLeftPane() {
   return (
     <div className="flex flex-col gap-3">
-      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-green p-4">
-        <div className="font-mono text-[10px] uppercase">Active Word</div>
-        <div className="font-display text-5xl leading-none mt-1">{word.word}</div>
-        <div className="font-mono text-sm mt-2">
-          {word.ipa} <span className="opacity-60">· {word.pos}</span>
-        </div>
-        <div className="mt-3 font-mono text-sm leading-relaxed"><b>Def:</b> {word.def}</div>
-        <div className="mt-1 font-mono text-sm leading-relaxed"><b>Ex:</b> "{word.ex}"</div>
-        <button
-          onClick={onSkip}
-          className="mt-3 bg-ink text-paper brutal-border brutal-press font-display text-lg px-3 py-1.5"
-        >
-          NEXT WORD →
-        </button>
+      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-yellow p-4">
+        <div className="font-mono text-[10px] uppercase">How WordBuzz works</div>
+        <ol className="font-display text-xl leading-tight mt-2 space-y-1">
+          <li>1. Pull the lever.</li>
+          <li>2. Get one power word + meaning.</li>
+          <li>3. Speak a 30-second story using it.</li>
+          <li>4. Score: did you actually use it right?</li>
+        </ol>
       </div>
-      <div className="brutal-border bg-paper p-3">
-        <div className="font-mono text-[10px] uppercase opacity-60 mb-2">Deck</div>
-        <div className="flex flex-wrap gap-2">
-          {decks.map((d) => (
-            <button
-              key={d}
-              onClick={() => onDeck(d)}
-              className={[
-                "px-2 py-1 font-display text-base brutal-border brutal-press",
-                deck === d ? "bg-ink text-paper" : "bg-paper",
-              ].join(" ")}
-            >
-              {d}
-            </button>
-          ))}
+      <div className="brutal-border bg-yappr-blue text-paper p-3">
+        <div className="font-display text-lg leading-none">PRO TIP</div>
+        <div className="font-mono text-xs mt-1 opacity-90">
+          Switch decks from the dropdown above the prompt. Pull the lever to roll the next word.
         </div>
       </div>
     </div>

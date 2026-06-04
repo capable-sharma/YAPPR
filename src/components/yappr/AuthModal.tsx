@@ -14,6 +14,7 @@ export function AuthModal({ onSubmit }: { onSubmit: (u: YapprUser) => void }) {
     if (n.length < 2) return setErr("Add your name.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)) return setErr("Valid email please.");
     try { localStorage.setItem("yappr.user", JSON.stringify({ name: n, email: m })); } catch { /* */ }
+    try { window.dispatchEvent(new Event("yappr-user-change")); } catch { /* */ }
     onSubmit({ name: n, email: m });
   };
 

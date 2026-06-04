@@ -1,8 +1,10 @@
 export type Tab = "topics" | "interview" | "vocab";
 
 export const RANDOM_TRACK = "Random Mix";
+export const TRENDING_TRACK = "🔥 Trending";
 
 export const TOPIC_CATEGORIES = [
+  TRENDING_TRACK,
   RANDOM_TRACK,
   "India & Politics",
   "Bollywood",
@@ -438,9 +440,12 @@ export const VOCAB_WORDS: Record<string, VocabWord[]> = {
   ],
 };
 
-// Build the Random Mix dynamically (excludes itself).
+// Build the Random Mix dynamically (excludes itself and Trending).
 const realDecks = Object.keys(VOCAB_WORDS);
 VOCAB_WORDS[RANDOM_TRACK] = realDecks.flatMap((d) => VOCAB_WORDS[d]);
 
 const realTopicCats = Object.keys(TOPICS);
 TOPICS[RANDOM_TRACK] = realTopicCats.flatMap((c) => TOPICS[c]);
+
+// Trending starts empty — filled at runtime by the news server function.
+TOPICS[TRENDING_TRACK] = [];

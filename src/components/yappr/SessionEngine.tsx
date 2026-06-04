@@ -24,6 +24,12 @@ interface SessionEngineProps {
   mode?: SessionMode;
   /** Speak duration in seconds. Defaults to 60. Interview = 90. */
   recordSeconds?: number;
+  /** Fired when the user pulls the lever. Return a string to override the picked prompt. */
+  onPull?: () => string | void;
+  /** Optional content shown directly under the prompt (e.g. vocab meaning card). */
+  belowPromptSlot?: React.ReactNode;
+  /** Optional banner above the prompt card (e.g. trending-loading/empty state). */
+  abovePromptSlot?: React.ReactNode;
 }
 
 const STREAK_MIN_SECONDS = 45;
@@ -33,6 +39,7 @@ export function SessionEngine({
   topPanel, requiredWord, badge,
   mode = "topic",
   recordSeconds = 60,
+  onPull, belowPromptSlot, abovePromptSlot,
 }: SessionEngineProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [prompt, setPrompt] = useState<string>("Pull the lever to start.");
@@ -72,11 +79,15 @@ export function SessionEngine({
 
   const handlePull = () => {
     if (phase !== "idle" && phase !== "card" && phase !== "results") return;
+    if (!candidates.length) return;
     setResult(null);
     setContent(null);
+    const override = onPull?.();
     setPhase("spinning");
     setReelOffset(0);
-    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    const picked = typeof override === "string" && override
+      ? override
+      : candidates[Math.floor(Math.random() * candidates.length)];
     setTimeout(() => {
       setPrompt(picked);
       setPhase("card");
@@ -172,6 +183,8 @@ export function SessionEngine({
         {topPanel}
       </div>
 
+      {abovePromptSlot}
+
       {/* Prompt + Lever rail */}
       <div className="flex items-stretch gap-4">
         <div className="brutal-border-thick brutal-shadow-lg bg-paper min-h-[180px] md:min-h-[240px] relative overflow-hidden flex-1">
@@ -201,6 +214,9 @@ export function SessionEngine({
                 <VocabSpotlight word={requiredWord} />
               )}
               <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
+              {belowPromptSlot && phase !== "results" && (
+                <div className="mt-1">{belowPromptSlot}</div>
+              )}
               {phase === "card" && (
                 <div className="flex flex-wrap items-center gap-3 mt-2">
                   <button
