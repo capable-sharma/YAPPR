@@ -24,8 +24,8 @@ interface SessionEngineProps {
   mode?: SessionMode;
   /** Speak duration in seconds. Defaults to 60. Interview = 90. */
   recordSeconds?: number;
-  /** Fired when the user pulls the lever — used by Vocab to advance the word. */
-  onPull?: () => void;
+  /** Fired when the user pulls the lever. Return a string to override the picked prompt. */
+  onPull?: () => string | void;
   /** Optional content shown directly under the prompt (e.g. vocab meaning card). */
   belowPromptSlot?: React.ReactNode;
   /** Optional banner above the prompt card (e.g. trending-loading/empty state). */
