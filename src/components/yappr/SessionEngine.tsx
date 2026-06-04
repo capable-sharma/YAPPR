@@ -79,8 +79,10 @@ export function SessionEngine({
 
   const handlePull = () => {
     if (phase !== "idle" && phase !== "card" && phase !== "results") return;
+    if (!candidates.length) return;
     setResult(null);
     setContent(null);
+    onPull?.();
     setPhase("spinning");
     setReelOffset(0);
     const picked = candidates[Math.floor(Math.random() * candidates.length)];
