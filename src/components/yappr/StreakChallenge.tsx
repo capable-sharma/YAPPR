@@ -47,14 +47,14 @@ export function StreakChallenge() {
           <PlanCard
             plan={PLANS.p49}
             accent="bg-yappr-blue text-paper"
-            ctaLabel="LOCK ₹49 · 7 DAYS"
+            ctaLabel="LOCK ₹99 · 14 DAYS"
             highlight="Most picked"
             onPick={() => setCheckoutFor("p49")}
           />
           <PlanCard
             plan={PLANS.p99}
             accent="bg-ink text-paper"
-            ctaLabel="LOCK ₹99 · 30 DAYS"
+            ctaLabel="LOCK ₹149 · 30 DAYS"
             highlight="100% refund"
             onPick={() => setCheckoutFor("p99")}
           />
