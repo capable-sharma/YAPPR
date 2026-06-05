@@ -5,21 +5,34 @@ import {
   type StreakState, type StreakPlan,
 } from "@/lib/yappr-streak";
 
+function readUserName(): string | null {
+  try {
+    const raw = localStorage.getItem("yappr.user");
+    if (!raw) return null;
+    const u = JSON.parse(raw) as { name?: string };
+    return u?.name ?? null;
+  } catch { return null; }
+}
+
 export function StreakChallenge() {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<StreakState>(() => loadStreak());
+  const [userName, setUserName] = useState<string | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<StreakPlan | null>(null);
   const [showRefund, setShowRefund] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setState(loadStreak());
-    const onChange = () => setState(loadStreak());
-    window.addEventListener("yappr-streak-change", onChange);
-    window.addEventListener("storage", onChange);
+    setUserName(readUserName());
+    const onStreak = () => setState(loadStreak());
+    const onUser = () => setUserName(readUserName());
+    window.addEventListener("yappr-streak-change", onStreak);
+    window.addEventListener("yappr-user-change", onUser);
+    window.addEventListener("storage", () => { onStreak(); onUser(); });
     return () => {
-      window.removeEventListener("yappr-streak-change", onChange);
-      window.removeEventListener("storage", onChange);
+      window.removeEventListener("yappr-streak-change", onStreak);
+      window.removeEventListener("yappr-user-change", onUser);
     };
   }, []);
 
@@ -32,8 +45,11 @@ export function StreakChallenge() {
     );
   }
 
-  // ---- No plan picked yet -> 3-tier picker
-  if (!state.plan) {
+  const loggedIn = !!userName;
+  const isPaidActive = loggedIn && (state.plan === "p49" || state.plan === "p99");
+
+  // ---- Not logged in OR no paid plan -> show tier options (not the streak grid)
+  if (!loggedIn || !isPaidActive) {
     return (
       <>
         <div className="flex flex-col gap-3">
@@ -70,29 +86,9 @@ export function StreakChallenge() {
     );
   }
 
-  const cfg = PLANS[state.plan];
+  const cfg = PLANS[state.plan!];
 
-  // ---- Free tier: active, no streak window
-  if (state.plan === "free") {
-    return (
-      <div className="brutal-border-thick brutal-shadow-lg bg-paper p-4">
-        <div className="font-mono text-[10px] uppercase opacity-60">Free tier · active</div>
-        <div className="font-display text-2xl leading-tight mt-1">YAPPR FREE</div>
-        <ul className="font-mono text-[11px] mt-2 space-y-1">
-          {cfg.perks.map((p) => <li key={p}>· {p}</li>)}
-        </ul>
-        <div className="font-mono text-[10px] mt-3 opacity-70">
-          Want the Ideal Rewrite script after every take? Upgrade.
-        </div>
-        <button
-          onClick={() => { resetStreak(); setState(loadStreak()); }}
-          className="mt-3 bg-yappr-yellow text-ink brutal-border brutal-press font-display text-lg px-3 py-1.5"
-        >
-          UPGRADE →
-        </button>
-      </div>
-    );
-  }
+
 
   const progress = getProgress(state);
   const complete = isComplete(state);

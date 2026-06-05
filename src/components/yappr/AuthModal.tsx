@@ -55,7 +55,6 @@ export function AuthModal({ onSubmit, onClose, variant = "gate" }: AuthModalProp
           <>
             <div className="flex items-center gap-3">
               <div className="bg-yappr-blue text-paper font-display text-2xl px-3 py-1 brutal-border">YAPPR</div>
-              <div className="font-mono text-xs uppercase tracking-widest">Sign up · Log in</div>
             </div>
             <h2 className="font-display text-4xl leading-none">Get in. Start yapping.</h2>
             <p className="font-mono text-xs text-muted-foreground">
