@@ -166,7 +166,7 @@ export function StreakChallenge() {
           </button>
         ) : complete ? (
           <div className="mt-3 brutal-border bg-yappr-green text-ink p-3 font-display text-xl">
-            ✓ 7/7 DONE — discipline locked.
+            ✓ {progress.target}/{progress.target} DONE — discipline locked.
           </div>
         ) : (
           <div className="font-mono text-[10px] mt-3 opacity-60">
