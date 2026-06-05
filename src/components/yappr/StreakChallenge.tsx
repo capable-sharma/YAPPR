@@ -86,28 +86,9 @@ export function StreakChallenge() {
     );
   }
 
-  const cfg = PLANS[state.plan];
+  const cfg = PLANS[state.plan!];
 
-  // ---- Free tier: active, no streak window
-  if (state.plan === "free") {
-    return (
-      <div className="brutal-border-thick brutal-shadow-lg bg-paper p-4">
-        <div className="font-mono text-[10px] uppercase opacity-60">Free tier · active</div>
-        <div className="font-display text-2xl leading-tight mt-1">YAPPR FREE</div>
-        <ul className="font-mono text-[11px] mt-2 space-y-1">
-          {cfg.perks.map((p) => <li key={p}>· {p}</li>)}
-        </ul>
-        <div className="font-mono text-[10px] mt-3 opacity-70">
-          Want the Ideal Rewrite script after every take? Upgrade.
-        </div>
-        <button
-          onClick={() => { resetStreak(); setState(loadStreak()); }}
-          className="mt-3 bg-yappr-yellow text-ink brutal-border brutal-press font-display text-lg px-3 py-1.5"
-        >
-          UPGRADE →
-        </button>
-      </div>
-    );
+
   }
 
   const progress = getProgress(state);
