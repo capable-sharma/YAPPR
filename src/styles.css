@@ -123,6 +123,14 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(color-mix(in oklab, var(--ink) 22%, transparent) 1px, transparent 1.4px);
+    background-size: 22px 22px;
+    background-position: 0 0;
+    background-attachment: fixed;
+  }
+  .dot-texture {
+    background-image: radial-gradient(color-mix(in oklab, var(--ink) 28%, transparent) 1px, transparent 1.4px);
+    background-size: 18px 18px;
   }
 }
 
