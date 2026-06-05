@@ -57,7 +57,11 @@ export function ProfileButton() {
           SIGN IN →
         </button>
         {showAuth && (
-          <AuthModal onSubmit={(u) => { setUser(u); setShowAuth(false); }} />
+          <AuthModal
+            variant="signup"
+            onClose={() => setShowAuth(false)}
+            onSubmit={(u) => { setUser(u); setShowAuth(false); }}
+          />
         )}
       </>
     );
