@@ -17,18 +17,22 @@ function readUserName(): string | null {
 export function StreakChallenge() {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<StreakState>(() => loadStreak());
+  const [userName, setUserName] = useState<string | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<StreakPlan | null>(null);
   const [showRefund, setShowRefund] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     setState(loadStreak());
-    const onChange = () => setState(loadStreak());
-    window.addEventListener("yappr-streak-change", onChange);
-    window.addEventListener("storage", onChange);
+    setUserName(readUserName());
+    const onStreak = () => setState(loadStreak());
+    const onUser = () => setUserName(readUserName());
+    window.addEventListener("yappr-streak-change", onStreak);
+    window.addEventListener("yappr-user-change", onUser);
+    window.addEventListener("storage", () => { onStreak(); onUser(); });
     return () => {
-      window.removeEventListener("yappr-streak-change", onChange);
-      window.removeEventListener("storage", onChange);
+      window.removeEventListener("yappr-streak-change", onStreak);
+      window.removeEventListener("yappr-user-change", onUser);
     };
   }, []);
 
@@ -41,8 +45,11 @@ export function StreakChallenge() {
     );
   }
 
-  // ---- No plan picked yet -> 3-tier picker
-  if (!state.plan) {
+  const loggedIn = !!userName;
+  const isPaidActive = loggedIn && (state.plan === "p49" || state.plan === "p99");
+
+  // ---- Not logged in OR no paid plan -> show tier options (not the streak grid)
+  if (!loggedIn || !isPaidActive) {
     return (
       <>
         <div className="flex flex-col gap-3">
