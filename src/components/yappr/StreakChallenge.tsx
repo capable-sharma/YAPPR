@@ -27,7 +27,7 @@ export function StreakChallenge() {
     return (
       <div className="brutal-border bg-ink text-paper p-4">
         <div className="font-mono text-[10px] uppercase opacity-70">Pick your tier</div>
-        <div className="font-display text-2xl leading-tight mt-1">FREE · ₹49 · ₹99</div>
+        <div className="font-display text-2xl leading-tight mt-1">FREE · ₹99 · ₹149</div>
       </div>
     );
   }
