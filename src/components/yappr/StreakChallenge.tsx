@@ -5,6 +5,15 @@ import {
   type StreakState, type StreakPlan,
 } from "@/lib/yappr-streak";
 
+function readUserName(): string | null {
+  try {
+    const raw = localStorage.getItem("yappr.user");
+    if (!raw) return null;
+    const u = JSON.parse(raw) as { name?: string };
+    return u?.name ?? null;
+  } catch { return null; }
+}
+
 export function StreakChallenge() {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<StreakState>(() => loadStreak());
