@@ -208,7 +208,7 @@ function YapprApp() {
       </main>
 
       <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60 text-center md:text-left">
-        © YAPPR · Built loud in India · For TPOs & MBA aspirants who hate stage fright.
+        © YAPPR · Built loud in India · Communicate Confidently.
       </footer>
     </div>
   );

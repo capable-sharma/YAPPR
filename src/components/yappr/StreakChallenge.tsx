@@ -27,7 +27,7 @@ export function StreakChallenge() {
     return (
       <div className="brutal-border bg-ink text-paper p-4">
         <div className="font-mono text-[10px] uppercase opacity-70">Pick your tier</div>
-        <div className="font-display text-2xl leading-tight mt-1">FREE · ₹49 · ₹99</div>
+        <div className="font-display text-2xl leading-tight mt-1">FREE · ₹99 · ₹149</div>
       </div>
     );
   }
@@ -47,14 +47,14 @@ export function StreakChallenge() {
           <PlanCard
             plan={PLANS.p49}
             accent="bg-yappr-blue text-paper"
-            ctaLabel="LOCK ₹49 · 7 DAYS"
+            ctaLabel="LOCK ₹99 · 14 DAYS"
             highlight="Most picked"
             onPick={() => setCheckoutFor("p49")}
           />
           <PlanCard
             plan={PLANS.p99}
             accent="bg-ink text-paper"
-            ctaLabel="LOCK ₹99 · 30 DAYS"
+            ctaLabel="LOCK ₹149 · 30 DAYS"
             highlight="100% refund"
             onPick={() => setCheckoutFor("p99")}
           />
@@ -166,7 +166,7 @@ export function StreakChallenge() {
           </button>
         ) : complete ? (
           <div className="mt-3 brutal-border bg-yappr-green text-ink p-3 font-display text-xl">
-            ✓ 7/7 DONE — discipline locked.
+            ✓ {progress.target}/{progress.target} DONE — discipline locked.
           </div>
         ) : (
           <div className="font-mono text-[10px] mt-3 opacity-60">

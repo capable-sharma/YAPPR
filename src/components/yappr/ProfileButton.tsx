@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { YapprUser } from "./AuthModal";
+import { AuthModal, type YapprUser } from "./AuthModal";
 
 function readUser(): YapprUser | null {
   try {
@@ -13,6 +13,7 @@ function readUser(): YapprUser | null {
 export function ProfileButton() {
   const [user, setUser] = useState<YapprUser | null>(null);
   const [open, setOpen] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,9 +48,18 @@ export function ProfileButton() {
 
   if (!user) {
     return (
-      <div className="brutal-border bg-ink text-paper px-2 py-1.5 font-mono text-[10px] uppercase">
-        Guest · sign in on first run
-      </div>
+      <>
+        <button
+          type="button"
+          onClick={() => setShowAuth(true)}
+          className="brutal-border brutal-press bg-ink text-paper font-display text-base md:text-lg px-3 py-2 tracking-wide hover-wobble"
+        >
+          SIGN IN →
+        </button>
+        {showAuth && (
+          <AuthModal onSubmit={(u) => { setUser(u); setShowAuth(false); }} />
+        )}
+      </>
     );
   }
 
@@ -66,7 +76,7 @@ export function ProfileButton() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="brutal-border brutal-press bg-ink text-paper w-10 h-10 md:w-11 md:h-11 flex items-center justify-center font-display text-lg"
+        className="brutal-border brutal-press bg-ink text-paper w-10 h-10 md:w-11 md:h-11 flex items-center justify-center font-display text-lg hover-wobble"
         aria-haspopup="menu"
         aria-expanded={open}
         title={`${user.name} · ${user.email}`}
@@ -76,7 +86,7 @@ export function ProfileButton() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-64 bg-paper brutal-border-thick brutal-shadow-lg p-3 flex flex-col gap-2 z-50"
+          className="absolute right-0 mt-2 w-64 bg-paper brutal-border-thick brutal-shadow-lg p-3 flex flex-col gap-2 z-50 animate-pop-in"
         >
           <div className="font-mono text-[10px] uppercase opacity-60">Signed in</div>
           <div className="font-display text-2xl leading-none">{user.name}</div>
