@@ -89,7 +89,6 @@ export function StreakChallenge() {
   const cfg = PLANS[state.plan!];
 
 
-  }
 
   const progress = getProgress(state);
   const complete = isComplete(state);
