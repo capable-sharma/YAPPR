@@ -207,7 +207,7 @@ function YapprApp() {
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60 text-center md:text-left">
+      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[10px] md:text-[11px] opacity-60 text-center md:text-left whitespace-nowrap overflow-x-auto">
         © YAPPR · Built loud in India · Communicate Confidently.
       </footer>
     </div>
