@@ -1,7 +1,19 @@
 // Frontend-only mock for the YAPPR Lock-in challenges.
 // All data lives in localStorage. No real money moves.
 
-const KEY = "yappr.streak.v2";
+const KEY_BASE = "yappr.streak.v2";
+
+/** Scope streak to the signed-in user so logging in with a fresh account
+ *  doesn't inherit someone else's plan/forfeit state. */
+function KEY(): string {
+  if (typeof window === "undefined") return `${KEY_BASE}.anon`;
+  try {
+    const raw = localStorage.getItem("yappr.user");
+    if (!raw) return `${KEY_BASE}.anon`;
+    const u = JSON.parse(raw) as { email?: string };
+    return `${KEY_BASE}.${(u?.email || "anon").toLowerCase()}`;
+  } catch { return `${KEY_BASE}.anon`; }
+}
 
 export type StreakPlan = "free" | "p49" | "p99";
 
