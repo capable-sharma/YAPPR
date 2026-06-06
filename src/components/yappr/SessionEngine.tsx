@@ -215,11 +215,11 @@ export function SessionEngine({
                   {badge}
                 </div>
               )}
-              {requiredWord && phase !== "results" && (
+              {requiredWord && phase !== "idle" && phase !== "results" && (
                 <VocabSpotlight word={requiredWord} />
               )}
               <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
-              {belowPromptSlot && phase !== "results" && (
+              {belowPromptSlot && phase !== "idle" && phase !== "results" && (
                 <div className="mt-1">{belowPromptSlot}</div>
               )}
               {phase === "card" && (
@@ -228,7 +228,7 @@ export function SessionEngine({
                     onClick={beginPrep}
                     className="bg-yappr-blue text-paper brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
                   >
-                    START 30s PREP →
+                    {skipPrep ? "START RECORDING →" : "START 30s PREP →"}
                   </button>
                   <span className="font-mono text-[11px] opacity-60">
                     or pull the lever again to re-spin
