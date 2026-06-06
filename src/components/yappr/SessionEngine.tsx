@@ -97,7 +97,10 @@ export function SessionEngine({
     }, 1300);
   };
 
-  const beginPrep = () => setPhase("prep");
+  const beginPrep = () => {
+    if (skipPrep) { onPrepDone(); return; }
+    setPhase("prep");
+  };
 
   const onPrepDone = () => {
     setPhase("flash");
@@ -174,12 +177,11 @@ export function SessionEngine({
   return (
     <div className="flex flex-col gap-4">
       {/* Category filter strip */}
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="font-mono text-[10px] uppercase opacity-60">Track</label>
+      <div className="flex items-center gap-2 flex-nowrap">
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="brutal-border bg-paper font-display text-xl px-3 py-1.5 focus:outline-none focus:bg-yappr-yellow"
+          className="brutal-border bg-paper font-display text-base md:text-xl px-2 md:px-3 py-1.5 focus:outline-none focus:bg-yappr-yellow min-w-0 max-w-[55%] md:max-w-none truncate"
         >
           {categories.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
