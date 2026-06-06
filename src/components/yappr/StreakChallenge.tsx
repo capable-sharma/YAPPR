@@ -26,7 +26,7 @@ export function StreakChallenge() {
     setState(loadStreak());
     setUserName(readUserName());
     const onStreak = () => setState(loadStreak());
-    const onUser = () => setUserName(readUserName());
+    const onUser = () => { setUserName(readUserName()); setState(loadStreak()); };
     window.addEventListener("yappr-streak-change", onStreak);
     window.addEventListener("yappr-user-change", onUser);
     window.addEventListener("storage", () => { onStreak(); onUser(); });
