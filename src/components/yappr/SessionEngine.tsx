@@ -24,6 +24,8 @@ interface SessionEngineProps {
   mode?: SessionMode;
   /** Speak duration in seconds. Defaults to 60. Interview = 90. */
   recordSeconds?: number;
+  /** Skip the 30s prep phase and jump straight to recording. */
+  skipPrep?: boolean;
   /** Fired when the user pulls the lever. Return a string to override the picked prompt. */
   onPull?: () => string | void;
   /** Optional content shown directly under the prompt (e.g. vocab meaning card). */
@@ -39,6 +41,7 @@ export function SessionEngine({
   topPanel, requiredWord, badge,
   mode = "topic",
   recordSeconds = 60,
+  skipPrep = false,
   onPull, belowPromptSlot, abovePromptSlot,
 }: SessionEngineProps) {
   const [phase, setPhase] = useState<Phase>("idle");
