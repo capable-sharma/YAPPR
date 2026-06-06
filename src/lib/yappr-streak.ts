@@ -109,7 +109,7 @@ export function istDateKey(d: Date = new Date()): string {
 export function loadStreak(): StreakState {
   if (typeof window === "undefined") return { ...EMPTY };
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY());
     if (!raw) return { ...EMPTY };
     return { ...EMPTY, ...JSON.parse(raw) };
   } catch {
@@ -118,7 +118,7 @@ export function loadStreak(): StreakState {
 }
 
 function save(s: StreakState) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* */ }
+  try { localStorage.setItem(KEY(), JSON.stringify(s)); } catch { /* */ }
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("yappr-streak-change"));
   }
