@@ -1,7 +1,19 @@
 // Frontend-only mock for the YAPPR Lock-in challenges.
 // All data lives in localStorage. No real money moves.
 
-const KEY = "yappr.streak.v2";
+const KEY_BASE = "yappr.streak.v2";
+
+/** Scope streak to the signed-in user so logging in with a fresh account
+ *  doesn't inherit someone else's plan/forfeit state. */
+function KEY(): string {
+  if (typeof window === "undefined") return `${KEY_BASE}.anon`;
+  try {
+    const raw = localStorage.getItem("yappr.user");
+    if (!raw) return `${KEY_BASE}.anon`;
+    const u = JSON.parse(raw) as { email?: string };
+    return `${KEY_BASE}.${(u?.email || "anon").toLowerCase()}`;
+  } catch { return `${KEY_BASE}.anon`; }
+}
 
 export type StreakPlan = "free" | "p49" | "p99";
 
@@ -97,7 +109,7 @@ export function istDateKey(d: Date = new Date()): string {
 export function loadStreak(): StreakState {
   if (typeof window === "undefined") return { ...EMPTY };
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY());
     if (!raw) return { ...EMPTY };
     return { ...EMPTY, ...JSON.parse(raw) };
   } catch {
@@ -106,7 +118,7 @@ export function loadStreak(): StreakState {
 }
 
 function save(s: StreakState) {
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* */ }
+  try { localStorage.setItem(KEY(), JSON.stringify(s)); } catch { /* */ }
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("yappr-streak-change"));
   }

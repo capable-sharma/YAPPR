@@ -69,7 +69,7 @@ function YapprApp() {
       return base.map((t) => stance + t);
     }
     if (tab === "interview") return INTERVIEW_QUESTIONS[intvCat] ?? [];
-    return [`Define & use "${vocabWord.word}" in a 30-second story.`];
+    return [`Create a sentence using "${vocabWord.word}".`];
   }, [tab, topicCat, debate, intvCat, vocabWord, trending]);
 
   // Vocab tab cannot use TRENDING_TRACK — keep the deck list clean.
@@ -180,8 +180,9 @@ function YapprApp() {
               category={vocabDeck}
               onCategoryChange={(d) => { setVocabDeck(d); setVocabIdx(0); }}
               mode="vocab"
-              recordSeconds={30}
-              badge="WORDBUZZ · 30s"
+              recordSeconds={15}
+              skipPrep
+              badge="WORDBUZZ · 15s"
               requiredWord={vocabWord.word}
               onPull={() => {
                 // Advance to the next word in the deck, return the matching prompt so
@@ -189,7 +190,7 @@ function YapprApp() {
                 const nextIdx = (vocabIdx + 1) % vocabList.length;
                 setVocabIdx(nextIdx);
                 const w = vocabList[nextIdx];
-                return `Define & use "${w.word}" in a 30-second story.`;
+                return `Create a sentence using "${w.word}".`;
               }}
               belowPromptSlot={
                 <div className="bg-yappr-green brutal-border p-3 font-mono text-sm leading-relaxed">
@@ -207,7 +208,7 @@ function YapprApp() {
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[11px] opacity-60 text-center md:text-left">
+      <footer className="mx-auto max-w-6xl px-3 md:px-6 pb-8 pt-4 font-mono text-[10px] md:text-[11px] opacity-60 text-center md:text-left whitespace-nowrap overflow-x-auto">
         © YAPPR · Built loud in India · Communicate Confidently.
       </footer>
     </div>
@@ -251,7 +252,7 @@ function VocabLeftPane() {
         <ol className="font-display text-xl leading-tight mt-2 space-y-1">
           <li>1. Pull the lever.</li>
           <li>2. Get one power word + meaning.</li>
-          <li>3. Speak a 30-second story using it.</li>
+          <li>3. Create a sentence using it (15s).</li>
           <li>4. Score: did you actually use it right?</li>
         </ol>
       </div>

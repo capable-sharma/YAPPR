@@ -24,6 +24,8 @@ interface SessionEngineProps {
   mode?: SessionMode;
   /** Speak duration in seconds. Defaults to 60. Interview = 90. */
   recordSeconds?: number;
+  /** Skip the 30s prep phase and jump straight to recording. */
+  skipPrep?: boolean;
   /** Fired when the user pulls the lever. Return a string to override the picked prompt. */
   onPull?: () => string | void;
   /** Optional content shown directly under the prompt (e.g. vocab meaning card). */
@@ -39,6 +41,7 @@ export function SessionEngine({
   topPanel, requiredWord, badge,
   mode = "topic",
   recordSeconds = 60,
+  skipPrep = false,
   onPull, belowPromptSlot, abovePromptSlot,
 }: SessionEngineProps) {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -94,7 +97,10 @@ export function SessionEngine({
     }, 1300);
   };
 
-  const beginPrep = () => setPhase("prep");
+  const beginPrep = () => {
+    if (skipPrep) { onPrepDone(); return; }
+    setPhase("prep");
+  };
 
   const onPrepDone = () => {
     setPhase("flash");
@@ -171,12 +177,11 @@ export function SessionEngine({
   return (
     <div className="flex flex-col gap-4">
       {/* Category filter strip */}
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="font-mono text-[10px] uppercase opacity-60">Track</label>
+      <div className="flex items-center gap-2 flex-nowrap">
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
-          className="brutal-border bg-paper font-display text-xl px-3 py-1.5 focus:outline-none focus:bg-yappr-yellow"
+          className="brutal-border bg-paper font-display text-base md:text-xl px-2 md:px-3 py-1.5 focus:outline-none focus:bg-yappr-yellow min-w-0 max-w-[55%] md:max-w-none truncate"
         >
           {categories.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -210,11 +215,11 @@ export function SessionEngine({
                   {badge}
                 </div>
               )}
-              {requiredWord && phase !== "results" && (
+              {requiredWord && phase !== "idle" && phase !== "results" && (
                 <VocabSpotlight word={requiredWord} />
               )}
               <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
-              {belowPromptSlot && phase !== "results" && (
+              {belowPromptSlot && phase !== "idle" && phase !== "results" && (
                 <div className="mt-1">{belowPromptSlot}</div>
               )}
               {phase === "card" && (
@@ -223,7 +228,7 @@ export function SessionEngine({
                     onClick={beginPrep}
                     className="bg-yappr-blue text-paper brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
                   >
-                    START 30s PREP →
+                    {skipPrep ? "START RECORDING →" : "START 30s PREP →"}
                   </button>
                   <span className="font-mono text-[11px] opacity-60">
                     or pull the lever again to re-spin
