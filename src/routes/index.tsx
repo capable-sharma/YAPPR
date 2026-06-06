@@ -78,7 +78,7 @@ function YapprApp() {
   return (
     <div className="min-h-screen bg-paper text-ink dot-texture">
       {/* Sticky top nav */}
-      <header className="sticky top-0 z-30 bg-yappr-yellow brutal-border-thick border-t-0 border-x-0 border-b-[6px]">
+      <header className="sticky top-0 z-30 bg-yappr-yellow dot-texture brutal-border-thick border-t-0 border-x-0 border-b-[6px]">
         <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="font-display text-3xl md:text-5xl leading-none truncate">YAPPR</div>
