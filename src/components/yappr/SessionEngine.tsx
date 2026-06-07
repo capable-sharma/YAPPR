@@ -72,10 +72,19 @@ export function SessionEngine({
 
   useEffect(() => {
     setSpeechOk(speechSupported());
-    try {
-      const raw = localStorage.getItem("yappr.user");
-      if (raw) setUser(JSON.parse(raw));
-    } catch { /* */ }
+    const readUser = () => {
+      try {
+        const raw = localStorage.getItem("yappr.user");
+        setUser(raw ? JSON.parse(raw) : null);
+      } catch { setUser(null); }
+    };
+    readUser();
+    window.addEventListener("yappr-user-change", readUser);
+    window.addEventListener("storage", readUser);
+    return () => {
+      window.removeEventListener("yappr-user-change", readUser);
+      window.removeEventListener("storage", readUser);
+    };
   }, []);
 
   useEffect(() => {
@@ -139,10 +148,18 @@ export function SessionEngine({
     const out = await recHandle.stop();
     setRecHandle(null);
     setPendingTranscript(out);
-    if (!user) {
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const raw = localStorage.getItem("yappr.user");
+        if (raw) currentUser = JSON.parse(raw);
+      } catch { /* */ }
+    }
+    if (!currentUser) {
       setPhase("auth");
     } else {
-      finalize(out, user);
+      setUser(currentUser);
+      finalize(out, currentUser);
     }
   };
 

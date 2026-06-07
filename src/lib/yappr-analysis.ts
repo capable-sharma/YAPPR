@@ -28,12 +28,42 @@ const STARTERS = ["basically", "so", "like", "actually"];
 
 const GRAMMAR_PATTERNS: { rx: RegExp; fix: string }[] = [
   { rx: /\bi is\b/gi, fix: "I am" },
+  { rx: /\bi has\b/gi, fix: "I have" },
+  { rx: /\bi was went\b/gi, fix: "I went" },
   { rx: /\bhe don't\b/gi, fix: "he doesn't" },
   { rx: /\bshe don't\b/gi, fix: "she doesn't" },
+  { rx: /\bit don't\b/gi, fix: "it doesn't" },
+  { rx: /\bhe do\b/gi, fix: "he does" },
+  { rx: /\bshe do\b/gi, fix: "she does" },
+  { rx: /\bhe have\b/gi, fix: "he has" },
+  { rx: /\bshe have\b/gi, fix: "she has" },
+  { rx: /\bthey was\b/gi, fix: "they were" },
+  { rx: /\bwe was\b/gi, fix: "we were" },
+  { rx: /\byou was\b/gi, fix: "you were" },
   { rx: /\bdiscuss about\b/gi, fix: "discuss" },
   { rx: /\bcope up\b/gi, fix: "cope with" },
   { rx: /\brevert back\b/gi, fix: "revert" },
+  { rx: /\breturn back\b/gi, fix: "return" },
   { rx: /\bmore better\b/gi, fix: "better" },
+  { rx: /\bmost best\b/gi, fix: "the best" },
+  { rx: /\bvery unique\b/gi, fix: "unique" },
+  { rx: /\bone of the\s+\w+s?\s+(is|was)\b/gi, fix: "one of the … are" },
+  { rx: /\b(a|an) (\w+)s\b/gi, fix: "drop the article or singular noun" },
+  { rx: /\bcould of\b/gi, fix: "could have" },
+  { rx: /\bshould of\b/gi, fix: "should have" },
+  { rx: /\bwould of\b/gi, fix: "would have" },
+  { rx: /\bain't\b/gi, fix: "isn't / aren't" },
+  { rx: /\beach of them are\b/gi, fix: "each of them is" },
+  { rx: /\bthere is many\b/gi, fix: "there are many" },
+  { rx: /\bthere is a lot of\b/gi, fix: "there are a lot of" },
+  { rx: /\bmuch people\b/gi, fix: "many people" },
+  { rx: /\bless people\b/gi, fix: "fewer people" },
+  { rx: /\bin nowadays\b/gi, fix: "nowadays" },
+  { rx: /\bdoes not has\b/gi, fix: "does not have" },
+  { rx: /\bdid not went\b/gi, fix: "did not go" },
+  { rx: /\bnever went nowhere\b/gi, fix: "never went anywhere" },
+  { rx: /\bbetween you and i\b/gi, fix: "between you and me" },
+  { rx: /\bme and (he|she|they|him|her|them)\b/gi, fix: "he/she/they and I" },
 ];
 
 export function analyzeTranscript(
@@ -101,8 +131,21 @@ export function analyzeTranscript(
   clarity -= Math.round(fillerRate * 200);
   clarity = clamp(clarity);
 
-  const grammarErrors = tokens.filter((t) => t.kind === "grammar").length;
-  const grammar = clamp(100 - grammarErrors * 8);
+  // Grammar score: penalise pattern errors AND long run-on stretches without punctuation.
+  // Count distinct grammar issues (consecutive grammar tokens count as one).
+  let distinctGrammarIssues = 0;
+  let prevWasGrammar = false;
+  tokens.forEach((t) => {
+    if (t.kind === "grammar") {
+      if (!prevWasGrammar) distinctGrammarIssues++;
+      prevWasGrammar = true;
+    } else prevWasGrammar = false;
+  });
+  const sentenceCount = (cleaned.match(/[.!?]+/g)?.length ?? 0);
+  const avgSentenceLen = sentenceCount > 0 ? wordCount / sentenceCount : wordCount;
+  const runOnPenalty = avgSentenceLen > 35 ? 25 : avgSentenceLen > 25 ? 12 : 0;
+  const noPunctPenalty = wordCount > 40 && sentenceCount === 0 ? 30 : 0;
+  const grammar = clamp(100 - distinctGrammarIssues * 12 - runOnPenalty - noPunctPenalty);
 
   const repeats = tokens.filter((t) => t.kind === "repeat").length;
   const structure = clamp(
@@ -122,7 +165,7 @@ export function analyzeTranscript(
   presence = clamp(presence);
 
   // Micro-action
-  const microAction = pickMicroAction({ wpm, fillerRate, grammarErrors, repeats, wordCount, durationSec });
+  const microAction = pickMicroAction({ wpm, fillerRate, grammarErrors: distinctGrammarIssues, repeats, wordCount, durationSec });
 
   return {
     tokens,
