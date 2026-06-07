@@ -72,10 +72,19 @@ export function SessionEngine({
 
   useEffect(() => {
     setSpeechOk(speechSupported());
-    try {
-      const raw = localStorage.getItem("yappr.user");
-      if (raw) setUser(JSON.parse(raw));
-    } catch { /* */ }
+    const readUser = () => {
+      try {
+        const raw = localStorage.getItem("yappr.user");
+        setUser(raw ? JSON.parse(raw) : null);
+      } catch { setUser(null); }
+    };
+    readUser();
+    window.addEventListener("yappr-user-change", readUser);
+    window.addEventListener("storage", readUser);
+    return () => {
+      window.removeEventListener("yappr-user-change", readUser);
+      window.removeEventListener("storage", readUser);
+    };
   }, []);
 
   useEffect(() => {
