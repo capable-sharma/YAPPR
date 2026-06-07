@@ -167,7 +167,7 @@ export function analyzeTranscript(
   presence = clamp(presence);
 
   // Micro-action
-  const microAction = pickMicroAction({ wpm, fillerRate, grammarErrors, repeats, wordCount, durationSec });
+  const microAction = pickMicroAction({ wpm, fillerRate, grammarErrors: distinctGrammarIssues, repeats, wordCount, durationSec });
 
   return {
     tokens,
