@@ -131,8 +131,23 @@ export function analyzeTranscript(
   clarity -= Math.round(fillerRate * 200);
   clarity = clamp(clarity);
 
-  const grammarErrors = tokens.filter((t) => t.kind === "grammar").length;
-  const grammar = clamp(100 - grammarErrors * 8);
+  // Grammar score: penalise pattern errors AND long run-on stretches without punctuation.
+  const grammarErrorTokens = new Set<number>();
+  tokens.forEach((t, i) => { if (t.kind === "grammar") grammarErrorTokens.add(i); });
+  // Count distinct grammar issues (consecutive grammar tokens count as one).
+  let distinctGrammarIssues = 0;
+  let prevWasGrammar = false;
+  tokens.forEach((t) => {
+    if (t.kind === "grammar") {
+      if (!prevWasGrammar) distinctGrammarIssues++;
+      prevWasGrammar = true;
+    } else prevWasGrammar = false;
+  });
+  const sentenceCount = (cleaned.match(/[.!?]+/g)?.length ?? 0);
+  const avgSentenceLen = sentenceCount > 0 ? wordCount / sentenceCount : wordCount;
+  const runOnPenalty = avgSentenceLen > 35 ? 25 : avgSentenceLen > 25 ? 12 : 0;
+  const noPunctPenalty = wordCount > 40 && sentenceCount === 0 ? 30 : 0;
+  const grammar = clamp(100 - distinctGrammarIssues * 12 - runOnPenalty - noPunctPenalty);
 
   const repeats = tokens.filter((t) => t.kind === "repeat").length;
   const structure = clamp(
