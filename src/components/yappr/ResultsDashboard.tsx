@@ -292,21 +292,16 @@ function ReviewList({ title, items, tone }: { title: string; items: string[]; to
 
 function IdealRewrite({ unlocked, text, loading }: { unlocked: boolean; text: string; loading: boolean }) {
   if (!unlocked) {
+    // Render a sample card so the LockableBlock blur overlay shows real layout underneath.
     return (
-      <div className="brutal-border-thick bg-paper p-4 relative overflow-hidden">
-        <div className="absolute top-2 right-2 bg-ink text-paper font-mono text-[9px] uppercase px-2 py-0.5 brutal-border">
-          🔒 ₹49 / ₹99
+      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-green text-ink p-4">
+        <div className="font-mono text-[10px] uppercase">Ideal Rewrite · read aloud</div>
+        <div className="font-display text-xl md:text-2xl leading-snug mt-2">
+          Three reasons this matters now — first, the data; second, the counter-example;
+          third, the forward-looking ask. End on a one-line stance, not a hedge.
         </div>
-        <div className="font-mono text-[10px] uppercase opacity-60">Ideal Rewrite</div>
-        <div className="font-display text-2xl mt-1">The script you should have said.</div>
-        <div className="font-mono text-xs mt-2 opacity-70 leading-relaxed">
-          Every take, our AI writes the perfect 60s version of YOUR answer to THIS prompt — punchy, structured, ready to read aloud.
-          Unlocks on the 7-day (₹49) or 30-day (₹99) lock-in tier.
-        </div>
-        <div className="mt-3 brutal-border bg-paper/60 p-3 font-mono text-xs leading-relaxed blur-sm select-none">
-          The single biggest issue here is framing. A sharper opener would be: "Three reasons this matters now —"
-          and you'd anchor on a 2025 data point, a counter-example, and a forward-looking ask. End with a one-line stance,
-          not a hedge. That's the version that lands in a placement panel.
+        <div className="font-mono text-[10px] mt-3 opacity-70">
+          Practice this aloud 3× then re-pull the lever for muscle memory.
         </div>
       </div>
     );
