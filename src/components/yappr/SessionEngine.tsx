@@ -148,10 +148,18 @@ export function SessionEngine({
     const out = await recHandle.stop();
     setRecHandle(null);
     setPendingTranscript(out);
-    if (!user) {
+    let currentUser = user;
+    if (!currentUser) {
+      try {
+        const raw = localStorage.getItem("yappr.user");
+        if (raw) currentUser = JSON.parse(raw);
+      } catch { /* */ }
+    }
+    if (!currentUser) {
       setPhase("auth");
     } else {
-      finalize(out, user);
+      setUser(currentUser);
+      finalize(out, currentUser);
     }
   };
 
