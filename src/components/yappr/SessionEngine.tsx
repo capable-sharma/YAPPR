@@ -55,6 +55,20 @@ export function SessionEngine({
   const [user, setUser] = useState<YapprUser | null>(null);
   const [micErr, setMicErr] = useState<string | null>(null);
   const [speechOk, setSpeechOk] = useState<boolean | null>(null);
+  const [idealUnlocked, setIdealUnlocked] = useState<boolean>(() => hasIdealRewrite(loadStreak()));
+
+  useEffect(() => {
+    const refresh = () => setIdealUnlocked(hasIdealRewrite(loadStreak()));
+    refresh();
+    window.addEventListener("yappr-streak-change", refresh);
+    window.addEventListener("yappr-user-change", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("yappr-streak-change", refresh);
+      window.removeEventListener("yappr-user-change", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
 
   useEffect(() => {
     setSpeechOk(speechSupported());
@@ -297,7 +311,7 @@ export function SessionEngine({
           content={content}
           contentLoading={contentLoading}
           mode={mode}
-          idealRewriteUnlocked={hasIdealRewrite(loadStreak())}
+          idealRewriteUnlocked={idealUnlocked}
         />
       )}
 

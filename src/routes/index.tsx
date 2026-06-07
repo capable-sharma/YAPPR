@@ -107,7 +107,7 @@ function YapprApp() {
           {tab === "interview" && <FrameworkAccordion />}
           {tab === "vocab" && <VocabLeftPane />}
 
-          <StreakChallenge />
+          <div id="yappr-plans"><StreakChallenge /></div>
 
           <div className="brutal-border bg-paper p-3 font-mono text-[10px] leading-relaxed">
             <b>PRIVACY:</b> Voice files never leave your device. Transcripts are processed in your browser and discarded after scoring. We store name, email, and numeric scores only.
