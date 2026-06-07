@@ -311,7 +311,7 @@ export function SessionEngine({
           content={content}
           contentLoading={contentLoading}
           mode={mode}
-          idealRewriteUnlocked={hasIdealRewrite(loadStreak())}
+          idealRewriteUnlocked={idealUnlocked}
         />
       )}
 
