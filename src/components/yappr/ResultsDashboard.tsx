@@ -95,20 +95,22 @@ export function ResultsDashboard({
         <div className="font-display text-xl">{prompt}</div>
       </div>
 
-      {/* AI Substance Review — judges what they SAID, not how */}
-      <ContentReview content={content ?? null} loading={!!contentLoading} emphasize={emphasizeContent} mode={mode} />
+      {/* Scores — free tier */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <ScoreDial label="Clarity" value={scores.clarity} color="yappr-yellow" />
+        <ScoreDial label="Structure" value={scores.structure} color="yappr-blue" />
+        <ScoreDial label="Presence" value={scores.presence} color="yappr-magenta" />
+        <ScoreDial label="Grammar" value={scores.grammar} color="yappr-green" />
+      </div>
 
-      {/* Ideal Rewrite — paid tier only */}
-      <IdealRewrite
-        unlocked={idealRewriteUnlocked}
-        text={content?.idealRewrite ?? ""}
-        loading={!!contentLoading}
-      />
+      {/* Stats strip — free tier */}
+      <div className="grid grid-cols-3 gap-3">
+        <Stat label="WPM" value={wpm} hint="target 130–160" />
+        <Stat label="Words" value={wordCount} />
+        <Stat label="Duration" value={`${Math.round(durationSec)}s`} />
+      </div>
 
-
-
-
-      {/* Transcript */}
+      {/* Transcript — free tier */}
       <div className="brutal-border brutal-shadow bg-paper p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="font-display text-2xl">Transcript</div>
@@ -125,26 +127,60 @@ export function ResultsDashboard({
         </p>
       </div>
 
-      {/* Scores */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <ScoreDial label="Clarity" value={scores.clarity} color="yappr-yellow" />
-        <ScoreDial label="Structure" value={scores.structure} color="yappr-blue" />
-        <ScoreDial label="Presence" value={scores.presence} color="yappr-magenta" />
-        <ScoreDial label="Grammar" value={scores.grammar} color="yappr-green" />
-      </div>
-
-      {/* Stats strip */}
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="WPM" value={wpm} hint="target 130–160" />
-        <Stat label="Words" value={wordCount} />
-        <Stat label="Duration" value={`${Math.round(durationSec)}s`} />
-      </div>
-
-      {/* Micro-action */}
+      {/* Micro-action — free tier */}
       <div className="brutal-border-thick brutal-shadow-lg bg-yappr-magenta text-paper p-5">
         <div className="font-mono text-[10px] uppercase tracking-widest opacity-80">One Micro-Action</div>
         <div className="font-display text-2xl md:text-3xl leading-tight mt-1">{microAction}</div>
       </div>
+
+      {/* ===== PRO SECTION ===== */}
+      <div className="brutal-border-thick bg-ink text-paper px-4 py-2 font-mono text-[10px] uppercase tracking-widest flex items-center justify-between">
+        <span>Pro Coach · Substance Review</span>
+        {!idealRewriteUnlocked && <span className="opacity-70">🔒 Locked</span>}
+      </div>
+
+      <LockableBlock unlocked={idealRewriteUnlocked} title="What landed / what wobbled">
+        <ContentReview content={content ?? null} loading={!!contentLoading} emphasize={emphasizeContent} mode={mode} />
+      </LockableBlock>
+
+      <LockableBlock unlocked={idealRewriteUnlocked} title="Ideal Rewrite — the script you should have said">
+        <IdealRewrite
+          unlocked={idealRewriteUnlocked}
+          text={content?.idealRewrite ?? ""}
+          loading={!!contentLoading}
+        />
+      </LockableBlock>
+    </div>
+  );
+}
+
+function openPlans() {
+  if (typeof window === "undefined") return;
+  const el = document.getElementById("yappr-plans");
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.dispatchEvent(new CustomEvent("yappr-open-plans"));
+}
+
+function LockableBlock({
+  unlocked, title, children,
+}: { unlocked: boolean; title: string; children: React.ReactNode }) {
+  if (unlocked) return <>{children}</>;
+  return (
+    <div className="relative">
+      <div aria-hidden className="pointer-events-none select-none blur-md opacity-60">
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={openPlans}
+        className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-paper/40 backdrop-blur-[2px] brutal-border brutal-press cursor-pointer"
+      >
+        <span className="text-3xl">🔒</span>
+        <span className="font-display text-lg md:text-xl text-ink text-center px-4">{title}</span>
+        <span className="bg-ink text-paper font-mono text-[10px] uppercase px-3 py-1 brutal-border">
+          Unlock with Pro →
+        </span>
+      </button>
     </div>
   );
 }
