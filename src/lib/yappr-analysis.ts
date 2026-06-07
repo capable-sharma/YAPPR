@@ -132,8 +132,6 @@ export function analyzeTranscript(
   clarity = clamp(clarity);
 
   // Grammar score: penalise pattern errors AND long run-on stretches without punctuation.
-  const grammarErrorTokens = new Set<number>();
-  tokens.forEach((t, i) => { if (t.kind === "grammar") grammarErrorTokens.add(i); });
   // Count distinct grammar issues (consecutive grammar tokens count as one).
   let distinctGrammarIssues = 0;
   let prevWasGrammar = false;
