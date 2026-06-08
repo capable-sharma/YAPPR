@@ -169,8 +169,8 @@ function YapprApp() {
               category={intvCat}
               onCategoryChange={setIntvCat}
               mode="interview"
-              recordSeconds={90}
-              badge="INTERVIEW · 90s"
+              recordSeconds={120}
+              badge="INTERVIEW · 2 MIN"
             />
           )}
           {tab === "vocab" && (
