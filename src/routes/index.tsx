@@ -29,7 +29,7 @@ function YapprApp() {
   const [tab, setTab] = useState<Tab>("topics");
 
   // Topics — default to TRENDING
-  const [topicCat, setTopicCat] = useState<string>(TRENDING_TRACK);
+  const [topicCat, setTopicCat] = useState<string>(RANDOM_TRACK);
   const [debate, setDebate] = useState<"off" | "for" | "against">("off");
   const [trending, setTrending] = useState<string[]>([]);
   const [trendingState, setTrendingState] = useState<"loading" | "ready" | "empty">("loading");
@@ -140,7 +140,11 @@ function YapprApp() {
                       ? "Pulling today's headlines from Indian news…"
                       : "Couldn't reach the news wire. Switch to Random Mix or another track."}
                   </div>
-                ) : null
+                ) : (
+                  <div className="brutal-border bg-paper p-3 font-mono text-xs">
+                    Start with what you know. Get comfortable. <span className="text-yappr-magenta font-bold">Then let the machine surprise you.</span>
+                  </div>
+                )
               }
               topPanel={
                 <div className="flex items-center gap-1 brutal-border bg-paper p-1 ml-auto">

@@ -30,7 +30,7 @@ const FALLBACK: ContentAnalysis = {
 export const analyzeContent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<ContentAnalysis> => {
-    const key = process.env.LOVABLE_API_KEY;
+    const key = process.env.GEMINI_API_KEY;
     if (!key) return { ...FALLBACK, verdict: "AI key missing." };
 
     const focus =
@@ -64,30 +64,40 @@ Return JSON with EXACTLY this shape:
 }`;
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: system },
-            { role: "user", content: user },
+          system_instruction: {
+            parts: [
+              { text: system }
+            ]
+          },
+          contents: [
+            {
+              parts: [
+                { text: user }
+              ]
+            }
           ],
-          response_format: { type: "json_object" },
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 8192,
+            responseMimeType: "application/json"
+          }
         }),
       });
       if (res.status === 429) return { ...FALLBACK, verdict: "Rate limited — retry shortly." };
       if (res.status === 402) return { ...FALLBACK, verdict: "AI credits exhausted." };
       if (!res.ok) {
         const t = await res.text().catch(() => "");
-        console.error("AI gateway error", res.status, t);
+        console.error("Gemini API error", res.status, t);
         return FALLBACK;
       }
       const j = await res.json();
-      const content: string = j?.choices?.[0]?.message?.content ?? "{}";
+      const content: string = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
       const parsed = JSON.parse(content);
       return {
         verdict: String(parsed.verdict ?? FALLBACK.verdict),
