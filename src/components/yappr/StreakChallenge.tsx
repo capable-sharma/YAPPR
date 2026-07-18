@@ -195,7 +195,7 @@ export function StreakChallenge() {
       <div className="absolute inset-0 flex items-center justify-center bg-paper/60 backdrop-blur-[2px] z-10 p-2">
         <div className="w-full brutal-border-thick brutal-shadow bg-yappr-yellow text-ink p-5 text-center flex flex-col items-center justify-center gap-3">
           <div className="font-mono text-[10px] uppercase tracking-widest opacity-80">
-            BETA FEATURE
+            YAPPR PRO
           </div>
           <div className="font-display text-3xl leading-none uppercase">
             STREAKS & REWARDS
@@ -286,10 +286,10 @@ function ProgressGrid({
             className={[
               "h-5 brutal-border flex items-center justify-center font-mono text-[8px]",
               isDone ? "bg-yappr-green text-ink"
-                     : isMissed ? "bg-paper/30"
-                     : isToday ? "bg-yappr-yellow text-ink animate-pulse"
-                     : future ? "bg-paper/10"
-                     : "bg-yappr-magenta/70",
+                : isMissed ? "bg-paper/30"
+                  : isToday ? "bg-yappr-yellow text-ink animate-pulse"
+                    : future ? "bg-paper/10"
+                      : "bg-yappr-magenta/70",
             ].join(" ")}
           >
             {isDone ? "✓" : isToday ? "•" : ""}
