@@ -36,162 +36,194 @@ export function StreakChallenge() {
     };
   }, []);
 
+  let innerJSX: React.ReactNode = null;
+
   if (!mounted) {
-    return (
+    innerJSX = (
       <div className="brutal-border bg-ink text-paper p-4">
         <div className="font-mono text-[10px] uppercase opacity-70">Pick your tier</div>
         <div className="font-display text-2xl leading-tight mt-1">FREE · ₹99 · ₹149</div>
       </div>
     );
-  }
+  } else {
+    const loggedIn = !!userName;
+    const isPaidActive = loggedIn && (state.plan === "p49" || state.plan === "p99");
+    const cfg = PLANS[state.plan!];
 
-  const loggedIn = !!userName;
-  const isPaidActive = loggedIn && (state.plan === "p49" || state.plan === "p99");
-
-  // ---- Not logged in OR no paid plan -> show tier options (not the streak grid)
-  if (!loggedIn || !isPaidActive) {
-    return (
-      <>
-        <div className="flex flex-col gap-3">
-          <div className="font-mono text-[10px] uppercase opacity-60 px-1">Pick your tier</div>
-          <PlanCard
-            plan={PLANS.free}
-            accent="bg-paper"
-            ctaLabel="START FREE"
-            onPick={() => { activatePlan("free"); setState(loadStreak()); }}
-          />
-          <PlanCard
-            plan={PLANS.p49}
-            accent="bg-yappr-blue text-paper"
-            ctaLabel="LOCK ₹99 · 14 DAYS"
-            highlight="Most picked"
-            onPick={() => setCheckoutFor("p49")}
-          />
-          <PlanCard
-            plan={PLANS.p99}
-            accent="bg-ink text-paper"
-            ctaLabel="LOCK ₹149 · 30 DAYS"
-            highlight="100% refund"
-            onPick={() => setCheckoutFor("p99")}
-          />
-        </div>
-        {checkoutFor && (
-          <CheckoutModal
-            plan={checkoutFor}
-            onCancel={() => setCheckoutFor(null)}
-            onPay={() => { activatePlan(checkoutFor); setCheckoutFor(null); setState(loadStreak()); }}
-          />
-        )}
-      </>
-    );
-  }
-
-  const cfg = PLANS[state.plan!];
-
-
-
-  const progress = getProgress(state);
-  const complete = isComplete(state);
-
-  // ---- Refunded (p99 only)
-  if (state.refunded) {
-    return (
-      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-green p-4">
-        <div className="font-mono text-[10px] uppercase">Challenge complete</div>
-        <div className="font-display text-3xl leading-tight mt-1">REFUNDED ✓</div>
-        <div className="font-mono text-[11px] mt-2">
-          ₹{cfg.amount} returned. You're in the YAPPR Hall of Streaks.
-        </div>
-        <button
-          onClick={() => { resetStreak(); setState(loadStreak()); }}
-          className="mt-3 bg-ink text-paper brutal-border brutal-press font-display text-lg px-3 py-1.5"
-        >
-          GO AGAIN
-        </button>
-      </div>
-    );
-  }
-
-  // ---- Broken streak
-  if (progress.brokenOn) {
-    return (
-      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-magenta text-paper p-4">
-        <div className="font-mono text-[10px] uppercase">Streak broken</div>
-        <div className="font-display text-3xl leading-tight mt-1">FORFEITED</div>
-        <div className="font-mono text-[11px] mt-2 opacity-90">
-          You missed <b>{progress.brokenOn}</b>. ₹{cfg.amount} deposit is non-refundable.
-        </div>
-        <ProgressGrid days={progress.daysInWindow} done={state.completedDates} brokenOn={progress.brokenOn} cols={cfg.days >= 30 ? 10 : 7} />
-        <button
-          onClick={() => { resetStreak(); setState(loadStreak()); }}
-          className="mt-3 bg-ink text-paper brutal-border brutal-press font-display text-lg px-3 py-1.5"
-        >
-          RESTART
-        </button>
-      </div>
-    );
-  }
-
-  // ---- Active
-  const today = istDateKey();
-  const refundable = cfg.refundable;
-  return (
-    <>
-      <div className="brutal-border-thick brutal-shadow-lg bg-ink text-paper p-4">
-        <div className="flex items-baseline justify-between">
-          <div className="font-mono text-[10px] uppercase opacity-70">{cfg.label} · active</div>
-          <div className="font-mono text-[10px] opacity-70">IST · {today}</div>
-        </div>
-        <div className="font-display text-4xl leading-none mt-1">
-          {progress.done}<span className="opacity-50">/{progress.target}</span>
-        </div>
-        <div className="font-mono text-[11px] mt-1 opacity-80">
-          {progress.todayDone
-            ? "Today logged ✓ — come back tomorrow."
-            : "Record one 45s+ session today."}
-        </div>
-
-        <ProgressGrid days={progress.daysInWindow} done={state.completedDates} today={today} cols={cfg.days >= 30 ? 10 : 7} />
-
-        {complete && refundable ? (
+    if (!loggedIn || !isPaidActive) {
+      innerJSX = (
+        <>
+          <div className="flex flex-col gap-3">
+            <div className="font-mono text-[10px] uppercase opacity-60 px-1">Pick your tier</div>
+            <PlanCard
+              plan={PLANS.free}
+              accent="bg-paper"
+              ctaLabel="START FREE"
+              onPick={() => { activatePlan("free"); setState(loadStreak()); }}
+            />
+            <PlanCard
+              plan={PLANS.p49}
+              accent="bg-yappr-blue text-paper"
+              ctaLabel="LOCK ₹99 · 14 DAYS"
+              highlight="Most picked"
+              onPick={() => setCheckoutFor("p49")}
+            />
+            <PlanCard
+              plan={PLANS.p99}
+              accent="bg-ink text-paper"
+              ctaLabel="LOCK ₹149 · 30 DAYS"
+              highlight="100% refund"
+              onPick={() => setCheckoutFor("p99")}
+            />
+          </div>
+          {checkoutFor && (
+            <CheckoutModal
+              plan={checkoutFor}
+              onCancel={() => setCheckoutFor(null)}
+              onPay={() => { activatePlan(checkoutFor); setCheckoutFor(null); setState(loadStreak()); }}
+            />
+          )}
+        </>
+      );
+    } else if (state.refunded) {
+      innerJSX = (
+        <div className="brutal-border-thick brutal-shadow-lg bg-yappr-green p-4">
+          <div className="font-mono text-[10px] uppercase">Challenge complete</div>
+          <div className="font-display text-3xl leading-tight mt-1">REFUNDED ✓</div>
+          <div className="font-mono text-[11px] mt-2">
+            ₹{cfg.amount} returned. You're in the YAPPR Hall of Streaks.
+          </div>
           <button
-            onClick={() => setShowRefund(true)}
-            className="mt-4 w-full bg-yappr-green text-ink brutal-border brutal-shadow brutal-press font-display text-2xl py-2"
+            onClick={() => { resetStreak(); setState(loadStreak()); }}
+            className="mt-3 bg-ink text-paper brutal-border brutal-press font-display text-lg px-3 py-1.5"
           >
-            CLAIM ₹{cfg.amount} REFUND →
+            GO AGAIN
           </button>
-        ) : complete ? (
-          <div className="mt-3 brutal-border bg-yappr-green text-ink p-3 font-display text-xl">
-            ✓ {progress.target}/{progress.target} DONE — discipline locked.
-          </div>
-        ) : (
-          <div className="font-mono text-[10px] mt-3 opacity-60">
-            {refundable
-              ? `₹${cfg.amount} refund auto-issues at ${cfg.days}/${cfg.days}.`
-              : `₹${cfg.amount} is a motivation deposit — not refundable on completion.`}
-          </div>
-        )}
+        </div>
+      );
+    } else {
+      const progress = getProgress(state);
+      const complete = isComplete(state);
 
-        <button
-          onClick={() => {
-            if (confirm("Reset the challenge? Your deposit will be forfeited.")) {
-              resetStreak(); setState(loadStreak());
-            }
-          }}
-          className="mt-2 font-mono text-[10px] underline opacity-60"
-        >
-          reset challenge
-        </button>
+      if (progress.brokenOn) {
+        innerJSX = (
+          <div className="brutal-border-thick brutal-shadow-lg bg-yappr-magenta text-paper p-4">
+            <div className="font-mono text-[10px] uppercase">Streak broken</div>
+            <div className="font-display text-3xl leading-tight mt-1">FORFEITED</div>
+            <div className="font-mono text-[11px] mt-2 opacity-90">
+              You missed <b>{progress.brokenOn}</b>. ₹{cfg.amount} deposit is non-refundable.
+            </div>
+            <ProgressGrid days={progress.daysInWindow} done={state.completedDates} brokenOn={progress.brokenOn} cols={cfg.days >= 30 ? 10 : 7} />
+            <button
+              onClick={() => { resetStreak(); setState(loadStreak()); }}
+              className="mt-3 bg-ink text-paper brutal-border brutal-press font-display text-lg px-3 py-1.5"
+            >
+              RESTART
+            </button>
+          </div>
+        );
+      } else {
+        const today = istDateKey();
+        const refundable = cfg.refundable;
+        innerJSX = (
+          <>
+            <div className="brutal-border-thick brutal-shadow-lg bg-ink text-paper p-4">
+              <div className="flex items-baseline justify-between">
+                <div className="font-mono text-[10px] uppercase opacity-70">{cfg.label} · active</div>
+                <div className="font-mono text-[10px] opacity-70">IST · {today}</div>
+              </div>
+              <div className="font-display text-4xl leading-none mt-1">
+                {progress.done}<span className="opacity-50">/{progress.target}</span>
+              </div>
+              <div className="font-mono text-[11px] mt-1 opacity-80">
+                {progress.todayDone
+                  ? "Today logged ✓ — come back tomorrow."
+                  : "Record one 45s+ session today."}
+              </div>
+
+              <ProgressGrid days={progress.daysInWindow} done={state.completedDates} today={today} cols={cfg.days >= 30 ? 10 : 7} />
+
+              {complete && refundable ? (
+                <button
+                  onClick={() => setShowRefund(true)}
+                  className="mt-4 w-full bg-yappr-green text-ink brutal-border brutal-shadow brutal-press font-display text-2xl py-2"
+                >
+                  CLAIM ₹{cfg.amount} REFUND →
+                </button>
+              ) : complete ? (
+                <div className="mt-3 brutal-border bg-yappr-green text-ink p-3 font-display text-xl">
+                  ✓ {progress.target}/{progress.target} DONE — discipline locked.
+                </div>
+              ) : (
+                <div className="font-mono text-[10px] mt-3 opacity-60">
+                  {refundable
+                    ? `₹${cfg.amount} refund auto-issues at ${cfg.days}/${cfg.days}.`
+                    : `₹${cfg.amount} is a motivation deposit — not refundable on completion.`}
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  if (confirm("Reset the challenge? Your deposit will be forfeited.")) {
+                    resetStreak(); setState(loadStreak());
+                  }
+                }}
+                className="mt-2 font-mono text-[10px] underline opacity-60"
+              >
+                reset challenge
+              </button>
+            </div>
+
+            {showRefund && (
+              <RefundModal
+                amount={cfg.amount}
+                onClose={() => setShowRefund(false)}
+                onConfirm={() => { refundMock(); setShowRefund(false); }}
+              />
+            )}
+          </>
+        );
+      }
+    }
+  }
+
+  return (
+    <div className="relative">
+      <div className="blur-[3px] opacity-40 pointer-events-none select-none">
+        {innerJSX}
       </div>
-
-      {showRefund && (
-        <RefundModal
-          amount={cfg.amount}
-          onClose={() => setShowRefund(false)}
-          onConfirm={() => { refundMock(); setShowRefund(false); }}
-        />
-      )}
-    </>
+      <div className="absolute inset-0 flex items-center justify-center bg-paper/60 backdrop-blur-[2px] z-10 p-2">
+        <div className="w-full brutal-border-thick brutal-shadow bg-yappr-yellow text-ink p-5 text-center flex flex-col items-center justify-center gap-3">
+          <div className="font-mono text-[10px] uppercase tracking-widest opacity-80">
+            BETA FEATURE
+          </div>
+          <div className="font-display text-3xl leading-none uppercase">
+            STREAKS & REWARDS
+          </div>
+          <div className="font-display text-xl leading-none uppercase text-ink/90">
+            DROPPING SOON.
+          </div>
+          <div className="font-mono text-xs opacity-75 mt-1 leading-normal">
+            <div>Lock in your discipline. Get rewarded for it.</div>
+            <div>We're cooking something worth showing up for.</div>
+          </div>
+          <div className="text-xl flex items-center gap-2 my-1">
+            <span>🔥</span>
+            <span className="opacity-40">·</span>
+            <span>⚡</span>
+            <span className="opacity-40">·</span>
+            <span>🏆</span>
+            <span className="opacity-40">·</span>
+            <span>💰</span>
+            <span className="opacity-40">·</span>
+            <span>🎯</span>
+          </div>
+          <div className="font-mono text-[9px] uppercase tracking-wider opacity-60 mt-1">
+            Keep yapping. It counts.
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

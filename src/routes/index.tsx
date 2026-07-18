@@ -88,7 +88,7 @@ function YapprApp() {
           </div>
           <ProfileButton />
         </div>
-        <div className="mx-auto max-w-6xl px-3 md:px-6 pb-3 flex justify-center md:justify-start">
+        <div className="mx-auto max-w-6xl px-3 md:px-6 pb-3 flex justify-center">
           <TabSwitcher value={tab} onChange={setTab} />
         </div>
         {/* candy stripe */}
@@ -132,7 +132,7 @@ function YapprApp() {
               abovePromptSlot={
                 topicCat === TRENDING_TRACK && trendingState !== "ready" ? (
                   <div className={[
-                    "brutal-border p-3 font-mono text-xs flex items-center gap-2",
+                    "brutal-border p-3 font-mono text-xs flex items-center justify-center gap-2 text-center",
                     trendingState === "loading" ? "bg-yappr-yellow" : "bg-yappr-magenta text-paper",
                   ].join(" ")}>
                     <span className={trendingState === "loading" ? "animate-pulse" : ""}>●</span>
@@ -141,7 +141,7 @@ function YapprApp() {
                       : "Couldn't reach the news wire. Switch to Random Mix or another track."}
                   </div>
                 ) : (
-                  <div className="brutal-border bg-paper p-3 font-mono text-xs">
+                  <div className="brutal-border bg-paper p-3 font-mono text-xs text-center">
                     Start with what you know. Get comfortable. <span className="text-yappr-magenta font-bold">Then let the machine surprise you.</span>
                   </div>
                 )
