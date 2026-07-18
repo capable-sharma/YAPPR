@@ -98,7 +98,7 @@ export function ResultsDashboard({
       {/* Scores — free tier */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <ScoreDial label="Clarity" value={scores.clarity} color="yappr-yellow" />
-        <ScoreDial label="Structure" value={scores.structure} color="yappr-blue" />
+        <ScoreDial label="Flow" value={scores.flow} color="yappr-blue" />
         <ScoreDial label="Presence" value={scores.presence} color="yappr-magenta" />
         <ScoreDial label="Grammar" value={scores.grammar} color="yappr-green" />
       </div>

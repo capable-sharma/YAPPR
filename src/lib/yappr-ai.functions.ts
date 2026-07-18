@@ -28,7 +28,7 @@ const FALLBACK: ContentAnalysis = {
 };
 
 export const analyzeContent = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => Input.parse(d))
+  .validator((d: unknown) => Input.parse(d))
   .handler(async ({ data }): Promise<ContentAnalysis> => {
     const key = process.env.GEMINI_API_KEY;
     if (!key) return { ...FALLBACK, verdict: "AI key missing." };
