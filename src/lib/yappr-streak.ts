@@ -207,5 +207,6 @@ export function isComplete(s: StreakState): boolean {
 
 /** Does the current plan unlock the AI Ideal Rewrite block? */
 export function hasIdealRewrite(s: StreakState): boolean {
-  return !!s.plan && PLANS[s.plan].unlocksIdealRewrite;
+  // Beta — all features free. Revert to plan check when payments go live.
+  return true;
 }

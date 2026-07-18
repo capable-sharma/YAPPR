@@ -208,7 +208,7 @@ export function SessionEngine({
   return (
     <div className="flex flex-col gap-4">
       {/* Category filter strip */}
-      <div className="flex items-center gap-2 flex-nowrap">
+      <div className="flex items-center justify-center gap-2 flex-wrap">
         <select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value)}
@@ -240,21 +240,21 @@ export function SessionEngine({
               <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-paper to-transparent pointer-events-none" />
             </div>
           ) : (
-            <div className="p-5 md:p-7 flex flex-col gap-3">
+            <div className="p-5 md:p-7 flex flex-col items-center text-center gap-3">
               {badge && (
-                <div className="self-start font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-2 py-1">
+                <div className="self-center font-mono text-[10px] uppercase tracking-widest bg-ink text-paper px-2 py-1">
                   {badge}
                 </div>
               )}
               {requiredWord && phase !== "idle" && phase !== "results" && (
                 <VocabSpotlight word={requiredWord} />
               )}
-              <div className="font-display text-3xl md:text-5xl leading-[1.05]">{prompt}</div>
+              <div className="font-display text-3xl md:text-5xl leading-[1.05] text-center">{prompt}</div>
               {belowPromptSlot && phase !== "idle" && phase !== "results" && (
                 <div className="mt-1">{belowPromptSlot}</div>
               )}
               {phase === "card" && (
-                <div className="flex flex-wrap items-center gap-3 mt-2">
+                <div className="flex flex-col md:flex-row items-center justify-center gap-3 mt-2">
                   <button
                     onClick={beginPrep}
                     className="bg-yappr-blue text-paper brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
@@ -335,8 +335,8 @@ export function SessionEngine({
       {/* Status strip (mobile lever fallback included) */}
       <div className="flex items-stretch justify-between gap-4">
         <div className="flex-1 flex flex-col gap-2">
-          <div className="brutal-border bg-yappr-yellow p-4">
-            <div className="flex items-baseline justify-between gap-3">
+          <div className="brutal-border bg-yappr-yellow p-4 text-center">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
               <div className="font-display text-2xl leading-none">{micErr ? "MIC BLOCKED" : "READY"}</div>
               <div className="font-mono text-[10px] uppercase opacity-70">
                 Speak {recordSeconds}s · streak needs {STREAK_MIN_SECONDS}s+
@@ -371,7 +371,7 @@ export function SessionEngine({
 
 function VocabSpotlight({ word }: { word: string }) {
   return (
-    <div className="self-start bg-yappr-green brutal-border px-3 py-2 font-mono text-xs">
+    <div className="self-center bg-yappr-green brutal-border px-3 py-2 font-mono text-xs">
       USE THE WORD <span className="font-display text-2xl ml-2 align-middle">{word}</span> IN YOUR ANSWER
     </div>
   );

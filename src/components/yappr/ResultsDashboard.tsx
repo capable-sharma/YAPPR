@@ -77,7 +77,7 @@ export function ResultsDashboard({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
+      <div className="flex flex-col items-center text-center gap-3">
         <div>
           <div className="font-mono text-xs uppercase tracking-widest opacity-60">The Breakdown</div>
           <h2 className="font-display text-4xl md:text-5xl leading-none">YOU YAPPED.</h2>
@@ -90,7 +90,7 @@ export function ResultsDashboard({
         </button>
       </div>
 
-      <div className="brutal-border brutal-shadow bg-paper p-4">
+      <div className="brutal-border brutal-shadow bg-paper p-4 text-center">
         <div className="font-mono text-[10px] uppercase opacity-60 mb-1">Prompt</div>
         <div className="font-display text-xl">{prompt}</div>
       </div>
@@ -112,7 +112,7 @@ export function ResultsDashboard({
 
       {/* Transcript — free tier */}
       <div className="brutal-border brutal-shadow bg-paper p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col md:flex-row items-center justify-between mb-2 gap-2 text-center md:text-left">
           <div className="font-display text-2xl">Transcript</div>
           <div className="flex flex-wrap gap-2 font-mono text-[10px] uppercase">
             <span className="px-2 py-1 bg-yappr-magenta text-paper">filler</span>
@@ -128,7 +128,7 @@ export function ResultsDashboard({
       </div>
 
       {/* Micro-action — free tier */}
-      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-magenta text-paper p-5">
+      <div className="brutal-border-thick brutal-shadow-lg bg-yappr-magenta text-paper p-5 text-center">
         <div className="font-mono text-[10px] uppercase tracking-widest opacity-80">One Micro-Action</div>
         <div className="font-display text-2xl md:text-3xl leading-tight mt-1">{microAction}</div>
       </div>
