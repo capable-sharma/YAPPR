@@ -82,12 +82,6 @@ export function ResultsDashboard({
           <div className="font-mono text-xs uppercase tracking-widest opacity-60">The Breakdown</div>
           <h2 className="font-display text-4xl md:text-5xl leading-none">YOU YAPPED.</h2>
         </div>
-        <button
-          onClick={onRetry}
-          className="bg-yappr-yellow brutal-border brutal-shadow brutal-press font-display text-2xl px-4 py-2"
-        >
-          PULL AGAIN ↻
-        </button>
       </div>
 
       <div className="brutal-border brutal-shadow bg-paper p-4 text-center">
@@ -150,6 +144,15 @@ export function ResultsDashboard({
           loading={!!contentLoading}
         />
       </LockableBlock>
+
+      <div className="flex justify-center mt-2">
+        <button
+          onClick={onRetry}
+          className="bg-yappr-yellow brutal-border-thick brutal-shadow-lg brutal-press font-display text-3xl px-8 py-4 w-full md:w-auto mt-4"
+        >
+          PULL AGAIN ↻
+        </button>
+      </div>
     </div>
   );
 }
