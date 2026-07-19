@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Lever } from "./Lever";
 import { CountdownTimer } from "./CountdownTimer";
 import { AuthModal, type YapprUser } from "./AuthModal";
@@ -7,6 +7,7 @@ import { startRecording, speechSupported } from "@/lib/yappr-recorder";
 import { analyzeTranscript, type AnalysisResult } from "@/lib/yappr-analysis";
 import { markTodayComplete, loadStreak, hasIdealRewrite } from "@/lib/yappr-streak";
 import { analyzeContent, type ContentAnalysis } from "@/lib/yappr-ai.functions";
+import { saveSession, getCurrentUser, onAuthStateChange, storePendingSession, popPendingSession } from "@/lib/yappr-auth";
 
 type Phase = "idle" | "spinning" | "card" | "prep" | "flash" | "record" | "processing" | "auth" | "results";
 
@@ -57,6 +58,9 @@ export function SessionEngine({
   const [speechOk, setSpeechOk] = useState<boolean | null>(null);
   const [idealUnlocked, setIdealUnlocked] = useState<boolean>(() => hasIdealRewrite(loadStreak()));
 
+  // Holds session payload between finalize() and auth confirmation
+  const pendingSessionRef = useRef<Parameters<typeof saveSession>[0] | null>(null);
+
   useEffect(() => {
     const refresh = () => setIdealUnlocked(hasIdealRewrite(loadStreak()));
     refresh();
@@ -68,6 +72,24 @@ export function SessionEngine({
       window.removeEventListener("yappr-user-change", refresh);
       window.removeEventListener("storage", refresh);
     };
+  }, []);
+
+  // When user logs in via magic link, save any pending session to DB
+  useEffect(() => {
+    const unsub = onAuthStateChange((dbUser) => {
+      if (!dbUser) return;
+      // Use localStorage as the single source of truth for pending sessions.
+      // Since popPendingSession() removes the item, this completely eliminates 
+      // the race condition where multiple tabs might try to save the same session.
+      const stored = popPendingSession();
+      if (stored) {
+        saveSession({ ...stored, userId: dbUser.id });
+      }
+      
+      // Clear the ref just in case, though it's no longer used for saving
+      pendingSessionRef.current = null;
+    });
+    return unsub;
   }, []);
 
   useEffect(() => {
@@ -167,16 +189,53 @@ export function SessionEngine({
     const r = analyzeTranscript(t.transcript, t.durationSec, { requiredWord });
     setResult(r);
     setPhase("results");
-    // 45-second floor for streak credit.
+  
+    // 45-second floor for streak credit
     if (t.durationSec >= STREAK_MIN_SECONDS && r.wordCount >= 30) {
       markTodayComplete();
     }
-    // Kick off AI substance review (best-effort, non-blocking for UI).
+  
+    // Kick off AI substance review — non-blocking
     if (r.wordCount >= 10) {
       setContentLoading(true);
       setContent(null);
       analyzeContent({ data: { transcript: r.rawText, prompt, mode } })
-        .then((c) => setContent(c))
+        .then((c) => {
+          setContent(c);
+          // Build the full session payload
+          const fullPayload = {
+            userId: "", // filled in by auth listener if not logged in yet
+            mode,
+            prompt,
+            category,
+            transcript: r.rawText,
+            durationSec: t.durationSec,
+            wpm: r.wpm,
+            wordCount: r.wordCount,
+            clarityScore: r.scores.clarity,
+            flowScore: r.scores.flow,
+            presenceScore: r.scores.presence,
+            grammarScore: r.scores.grammar,
+            contentScore: c.contentScore,
+            verdict: c.verdict,
+            strengths: c.strengths,
+            weaknesses: c.weaknesses,
+            counterPoints: c.counterPoints,
+            betterAngle: c.betterAngle,
+            idealRewrite: c.idealRewrite,
+          };
+          getCurrentUser().then((dbUser) => {
+            if (dbUser) {
+              // Already logged in — save immediately
+              saveSession({ ...fullPayload, userId: dbUser.id });
+              pendingSessionRef.current = null;
+            } else {
+              // Store in both ref and localStorage
+              pendingSessionRef.current = fullPayload;
+              storePendingSession(fullPayload);
+            }
+          });
+        })
         .catch((e) => {
           console.error(e);
           setContent({
@@ -188,8 +247,57 @@ export function SessionEngine({
             betterAngle: "",
             idealRewrite: "",
           });
+          // Save delivery scores only if AI failed
+          const deliveryPayload = {
+            userId: "",
+            mode,
+            prompt,
+            category,
+            transcript: r.rawText,
+            durationSec: t.durationSec,
+            wpm: r.wpm,
+            wordCount: r.wordCount,
+            clarityScore: r.scores.clarity,
+            flowScore: r.scores.flow,
+            presenceScore: r.scores.presence,
+            grammarScore: r.scores.grammar,
+          };
+          getCurrentUser().then((dbUser) => {
+            if (dbUser) {
+              saveSession({ ...deliveryPayload, userId: dbUser.id });
+              pendingSessionRef.current = null;
+            } else {
+              pendingSessionRef.current = deliveryPayload;
+              storePendingSession(deliveryPayload);
+            }
+          });
         })
         .finally(() => setContentLoading(false));
+    } else {
+      // Short session — save delivery scores only, no AI call
+      const deliveryPayload = {
+        userId: "",
+        mode,
+        prompt,
+        category,
+        transcript: r.rawText,
+        durationSec: t.durationSec,
+        wpm: r.wpm,
+        wordCount: r.wordCount,
+        clarityScore: r.scores.clarity,
+        flowScore: r.scores.flow,
+        presenceScore: r.scores.presence,
+        grammarScore: r.scores.grammar,
+      };
+      getCurrentUser().then((dbUser) => {
+        if (dbUser) {
+          saveSession({ ...deliveryPayload, userId: dbUser.id });
+          pendingSessionRef.current = null;
+        } else {
+          pendingSessionRef.current = deliveryPayload;
+          storePendingSession(deliveryPayload);
+        }
+      });
     }
   };
 
