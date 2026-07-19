@@ -68,7 +68,7 @@ CREATE TABLE sessions (
     wpm INTEGER,
     word_count INTEGER,
     clarity_score INTEGER,
-    structure_score INTEGER,
+    flow_score INTEGER,
     presence_score INTEGER,
     grammar_score INTEGER,
     content_score INTEGER,
