@@ -16,10 +16,10 @@ import { fetchTrendingTopics } from "@/lib/yappr-news.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "YAPPR — Your Speaking Slot Machine" },
-      { name: "description", content: "Forge elite communication skills under pressure. Impromptu, Interview Prep & WordBuzz drills for Indian students, placements & MBA aspirants." },
-      { property: "og:title", content: "YAPPR — Your Speaking Slot Machine" },
-      { property: "og:description", content: "The digital gym for communication. Trending impromptu topics, interview prep, vocab drills. 30–90 seconds. No fluff." },
+      { title: "YAPPR — Stop Yapping Nonsense." },
+      { name: "description", content: "Turn brain-rot into communication master. 30 seconds to think, 60 seconds to talk. Train your voice like a gym rep." },
+      { property: "og:title", content: "YAPPR — Stop Yapping Nonsense." },
+      { property: "og:description", content: "Turn brain-rot into communication master. 30 seconds to think, 60 seconds to talk. Train your voice like a gym rep." },
     ],
   }),
   component: YapprApp,
