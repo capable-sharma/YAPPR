@@ -191,3 +191,52 @@ export const analyzeContent = createServerFn({ method: "POST" })
         "AI coach is temporarily unavailable — your delivery scores are still valid.",
     };
   });
+
+// ── Audio Transcription Function (Groq Whisper) ──────────────────────────
+
+const TranscribeInput = z.object({
+  audioBase64: z.string(),
+  mimeType: z.string().optional(),
+});
+
+export const transcribeAudio = createServerFn({ method: "POST" })
+  .validator((d: unknown) => TranscribeInput.parse(d))
+  .handler(async ({ data }): Promise<{ transcript: string }> => {
+    const groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      console.warn("GROQ_API_KEY missing for audio transcription");
+      return { transcript: "" };
+    }
+
+    try {
+      const mime = data.mimeType || "audio/webm";
+      const buffer = Buffer.from(data.audioBase64, "base64");
+      const ext = mime.includes("mp4") || mime.includes("m4a") ? "m4a" : "webm";
+      const file = new File([buffer], `speech.${ext}`, { type: mime });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("model", "whisper-large-v3-turbo");
+      formData.append("language", "en");
+
+      const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqKey}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Groq Whisper API error:", response.status, errText);
+        return { transcript: "" };
+      }
+
+      const result = await response.json();
+      return { transcript: (result.text || "").trim() };
+    } catch (err) {
+      console.error("Audio transcription exception:", err);
+      return { transcript: "" };
+    }
+  });
