@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { sendMagicLink } from "@/lib/yappr-auth";
+import { useState, useEffect, useRef } from "react";
+import { signInWithIdToken } from "@/lib/yappr-auth";
 
-// YapprUser kept exported — SessionEngine still imports this type
 export interface YapprUser { name: string; email: string }
 
 interface AuthModalProps {
@@ -11,77 +10,54 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ onSubmit, onClose, variant = "gate" }: AuthModalProps) {
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [err, setErr] = useState("");
-  const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const containerRef = useRef<HTMLDivElement>(null);
   const isSignup = variant === "signup";
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const m = email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m)) return setErr("Valid email please.");
-    if (m.length > 200) return setErr("Email too long.");
-    const n = name.trim();
-    if (n.length < 2) return setErr("Add your name.");
-    if (n.length > 80) return setErr("Name too long.");
-    setErr("");
-    setLoading(true);
-    const error = await sendMagicLink(m);
-    setLoading(false);
-    if (error) {
-      setErr(error);
-      return;
-    }
-    // Persist locally so SessionEngine can proceed immediately
-    try {
-      localStorage.setItem("yappr.user", JSON.stringify({ name: n, email: m }));
-      window.dispatchEvent(new Event("yappr-user-change"));
-    } catch { /* */ }
-    setSent(true);
-    // Unblock the session immediately — results show now, link arrives in email
-    onSubmit({ name: n, email: m });
-  };
+  useEffect(() => {
+    // Prevent double injection in StrictMode
+    if (document.getElementById("google-gsi-script")) return;
 
-  // Confirmation screen shown after magic link is sent
-  if (sent) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/80 backdrop-blur-sm">
-        <div className="relative w-full max-w-md bg-yappr-green brutal-border-thick brutal-shadow-lg p-6 flex flex-col gap-4 animate-pop-in">
-          {onClose && (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Close"
-              className="absolute -top-3 -right-3 bg-ink text-paper brutal-border brutal-press w-9 h-9 flex items-center justify-center font-display text-2xl leading-none"
-            >
-              ×
-            </button>
-          )}
-          <div className="font-mono text-[10px] uppercase tracking-widest opacity-70">
-            Check your inbox
-          </div>
-          <h2 className="font-display text-4xl leading-none">
-            Link sent.<br />Go tap it.
-          </h2>
-          <p className="font-mono text-xs opacity-70">
-            We sent a magic link to <b>{email}</b>. Click it to lock in your
-            account — your scores are already showing below.
-          </p>
-        </div>
-      </div>
-    );
-  }
+    const script = document.createElement("script");
+    script.id = "google-gsi-script";
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if ((window as any).google && containerRef.current) {
+        (window as any).google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: async (response: any) => {
+            setLoading(true);
+            setErr("");
+            try {
+              const u = await signInWithIdToken(response.credential);
+              // Save locally so the session engine has it instantly
+              localStorage.setItem("yappr.user", JSON.stringify(u));
+              window.dispatchEvent(new Event("yappr-user-change"));
+              onSubmit(u); // unblocks the UI!
+            } catch (error: any) {
+              setErr(error.message || "Failed to sign in");
+              setLoading(false);
+            }
+          },
+        });
+        (window as any).google.accounts.id.renderButton(
+          containerRef.current,
+          { theme: "filled_black", size: "large", type: "standard", shape: "rectangular" }
+        );
+      }
+    };
+    document.body.appendChild(script);
+  }, [onSubmit]);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/80 backdrop-blur-sm"
       onClick={onClose}
     >
-      <form
-        onSubmit={submit}
+      <div
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-md bg-paper brutal-border-thick brutal-shadow-lg p-6 flex flex-col gap-4 animate-pop-in"
       >
@@ -107,7 +83,7 @@ export function AuthModal({ onSubmit, onClose, variant = "gate" }: AuthModalProp
               Get in. Start yapping.
             </h2>
             <p className="font-mono text-xs text-muted-foreground">
-              Drop your email. We send a magic link — no password ever.
+              Sign in with Google. No passwords ever.
             </p>
           </>
         ) : (
@@ -121,37 +97,13 @@ export function AuthModal({ onSubmit, onClose, variant = "gate" }: AuthModalProp
               </div>
             </div>
             <h2 className="font-display text-4xl leading-none">
-              Your run is in.<br />Drop your email.
+              Your run is in.<br />Sign in to view.
             </h2>
             <p className="font-mono text-xs text-muted-foreground">
-              We send a magic link — no password. Your audio was already deleted.
+              Sign in with Google. Your audio was already deleted.
             </p>
           </>
         )}
-
-        <label className="flex flex-col gap-1">
-          <span className="font-mono text-xs uppercase">Name</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            maxLength={80}
-            className="brutal-border bg-paper px-3 py-2 font-display text-2xl focus:outline-none focus:bg-yappr-yellow"
-            placeholder="Aanya Sharma"
-          />
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className="font-mono text-xs uppercase">Email</span>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            maxLength={200}
-            className="brutal-border bg-paper px-3 py-2 font-mono text-base focus:outline-none focus:bg-yappr-yellow"
-            placeholder="you@gmail.com"
-          />
-        </label>
 
         {err && (
           <div className="bg-destructive text-destructive-foreground px-3 py-2 font-mono text-sm brutal-border">
@@ -159,14 +111,16 @@ export function AuthModal({ onSubmit, onClose, variant = "gate" }: AuthModalProp
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-ink text-paper brutal-border brutal-shadow brutal-press font-display text-3xl py-3 tracking-wide disabled:opacity-50"
-        >
-          {loading ? "SENDING..." : isSignup ? "SEND LINK →" : "SHOW MY SCORE →"}
-        </button>
-      </form>
+        <div className="flex justify-center mt-2" ref={containerRef}>
+          {/* Google Button Renders Here */}
+        </div>
+
+        {loading && (
+          <p className="text-center font-mono text-xs uppercase opacity-70 mt-2">
+            Connecting...
+          </p>
+        )}
+      </div>
     </div>
   );
 }

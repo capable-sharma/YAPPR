@@ -78,15 +78,25 @@ export function SessionEngine({
   useEffect(() => {
     const unsub = onAuthStateChange((dbUser) => {
       if (!dbUser) return;
-      // Use localStorage as the single source of truth for pending sessions.
-      // Since popPendingSession() removes the item, this completely eliminates 
-      // the race condition where multiple tabs might try to save the same session.
+
+      // Extract user info from Google Auth response
+      const email = dbUser.email || "";
+      const name =
+        (dbUser as any).user_metadata?.full_name ||
+        (dbUser as any).user_metadata?.name ||
+        email.split("@")[0] ||
+        "Yapper";
+
+      const u = { name, email };
+      localStorage.setItem("yappr.user", JSON.stringify(u));
+      setUser(u);
+
+      // Save any pending session if they logged in from the gate
       const stored = popPendingSession();
       if (stored) {
         saveSession({ ...stored, userId: dbUser.id });
       }
       
-      // Clear the ref just in case, though it's no longer used for saving
       pendingSessionRef.current = null;
     });
     return unsub;

@@ -1,15 +1,21 @@
 import { supabase } from "./supabase";
 
-/** Send a magic link to the given email. Returns error string or null on success. */
-export async function sendMagicLink(email: string): Promise<string | null> {
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: window.location.origin,
-    },
+/** Trigger Native Google Auth via ID Token (No redirect). */
+export async function signInWithIdToken(token: string): Promise<{ name: string, email: string }> {
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: "google",
+    token,
   });
-  if (error) return error.message;
-  return null;
+  if (error) {
+    console.error("Google Auth error:", error);
+    throw new Error(error.message);
+  }
+  
+  const user = data.user;
+  const email = user?.email || "";
+  const name = user?.user_metadata?.full_name || user?.user_metadata?.name || email.split("@")[0] || "Yapper";
+  
+  return { name, email };
 }
 
 /** Get the current signed-in Supabase user. Returns null if not logged in. */
