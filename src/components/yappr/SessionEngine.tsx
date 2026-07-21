@@ -206,7 +206,7 @@ export function SessionEngine({
     }
   
     // Kick off AI substance review — non-blocking
-    if (r.wordCount >= 10) {
+    if (r.wordCount >= 45) {
       setContentLoading(true);
       setContent(null);
       analyzeContent({ data: { transcript: r.rawText, prompt, mode } })
@@ -284,7 +284,21 @@ export function SessionEngine({
         })
         .finally(() => setContentLoading(false));
     } else {
-      // Short session — save delivery scores only, no AI call
+      // Handle < 45 words (including 0)
+      const isZero = r.wordCount === 0;
+      setContent({
+        verdict: isZero
+          ? "Microphone detected no speech. Check your mic permissions and try again!"
+          : "Not enough speech data for AI Coach review (minimum 45 words required). Keep yapping next time!",
+        contentScore: 0,
+        strengths: [],
+        weaknesses: [],
+        counterPoints: [],
+        betterAngle: "",
+        idealRewrite: "",
+      });
+
+      // Save delivery scores (which will be all 0s if wordCount is 0)
       const deliveryPayload = {
         userId: "",
         mode,
@@ -299,6 +313,7 @@ export function SessionEngine({
         presenceScore: r.scores.presence,
         grammarScore: r.scores.grammar,
       };
+      
       getCurrentUser().then((dbUser) => {
         if (dbUser) {
           saveSession({ ...deliveryPayload, userId: dbUser.id });
