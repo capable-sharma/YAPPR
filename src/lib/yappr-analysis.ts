@@ -112,6 +112,18 @@ export function analyzeTranscript(
   const wordCount = wordsArr.length;
   const wpm = durationSec > 0 ? Math.round((wordCount / durationSec) * 60) : 0;
 
+  if (wordCount === 0) {
+    return {
+      tokens: [],
+      rawText: "",
+      wpm: 0,
+      durationSec,
+      wordCount: 0,
+      scores: { clarity: 0, flow: 0, presence: 0, grammar: 0 },
+      microAction: "Speak up! Your microphone didn't catch anything."
+    };
+  }
+
   // Build tokens
   const tokens: TranscriptToken[] = [];
   const sentenceStartIdx = new Set<number>();

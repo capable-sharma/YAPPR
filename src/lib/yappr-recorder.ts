@@ -14,6 +14,7 @@ export async function startRecording(): Promise<RecorderHandle> {
   let interimTranscript = "";
   let stream: MediaStream | null = null;
   let recognition: any = null;
+  let isUserStopped = false;
 
   // Try to get mic permission — even if speech API fails, this confirms the gesture.
   try {
@@ -37,11 +38,22 @@ export async function startRecording(): Promise<RecorderHandle> {
       }
     };
     recognition.onerror = () => { /* swallow */ };
+    recognition.onend = () => {
+      if (!isUserStopped) {
+        // Auto-reboot to bypass mobile Chrome 2-3s silence timeout
+        setTimeout(() => {
+          if (!isUserStopped) {
+            try { recognition.start(); } catch { /* already started */ }
+          }
+        }, 50);
+      }
+    };
     try { recognition.start(); } catch { /* already started */ }
   }
 
   return {
     stop: async () => {
+      isUserStopped = true;
       const durationSec = (Date.now() - startedAt) / 1000;
       try { recognition?.stop(); } catch { /* */ }
       // Give recognition a beat to flush final results
@@ -51,6 +63,7 @@ export async function startRecording(): Promise<RecorderHandle> {
       return { transcript, durationSec };
     },
     cancel: () => {
+      isUserStopped = true;
       try { recognition?.stop(); } catch { /* */ }
       stream?.getTracks().forEach((t) => t.stop());
     },
