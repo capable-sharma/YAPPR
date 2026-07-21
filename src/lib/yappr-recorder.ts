@@ -1,27 +1,119 @@
 // Browser-side recording + speech recognition utilities.
-// Uses Web Speech API for transcription (free, no backend) with MediaRecorder fallback timing.
+// Hybrid Architecture:
+// - Desktop: Uses Web Speech API for real-time live streaming transcription.
+// - Mobile: Uses HTML5 MediaRecorder + Groq Whisper API for rock-solid zero-timeout recording.
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { transcribeAudio } from "./yappr-ai.functions";
 
 export interface RecorderHandle {
   stop: () => Promise<{ transcript: string; durationSec: number }>;
   cancel: () => void;
 }
 
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const isTouch = navigator.maxTouchPoints > 0;
+  return (
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ||
+    (isTouch && window.innerWidth < 768)
+  );
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl.split(",")[1] || "";
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 export async function startRecording(): Promise<RecorderHandle> {
   const startedAt = Date.now();
-  let finalTranscript = "";
-  let interimTranscript = "";
   let stream: MediaStream | null = null;
-  let recognition: any = null;
-  let isUserStopped = false;
 
-  // Try to get mic permission — even if speech API fails, this confirms the gesture.
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch {
-    // continue — speech API may still work on some browsers
+  } catch (err) {
+    console.error("Microphone access denied:", err);
   }
+
+  const mobile = isMobileDevice();
+
+  // ── MOBILE PATH: MediaRecorder + Groq Whisper ──────────────────────────────
+  if (mobile && stream && typeof MediaRecorder !== "undefined") {
+    const chunks: Blob[] = [];
+    const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+      ? "audio/webm;codecs=opus"
+      : MediaRecorder.isTypeSupported("audio/mp4")
+      ? "audio/mp4"
+      : "";
+
+    const mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    mediaRecorder.start(500);
+
+    return {
+      stop: async () => {
+        const durationSec = (Date.now() - startedAt) / 1000;
+        
+        return new Promise((resolve) => {
+          mediaRecorder.onstop = async () => {
+            stream?.getTracks().forEach((t) => t.stop());
+            const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+            
+            if (blob.size === 0) {
+              resolve({ transcript: "", durationSec });
+              return;
+            }
+
+            try {
+              const audioBase64 = await blobToBase64(blob);
+              const res = await transcribeAudio({
+                data: { audioBase64, mimeType: mediaRecorder.mimeType || "audio/webm" },
+              });
+              resolve({ transcript: res.transcript, durationSec });
+            } catch (e) {
+              console.error("Groq Whisper transcription failed:", e);
+              resolve({ transcript: "", durationSec });
+            }
+          };
+
+          try {
+            mediaRecorder.stop();
+          } catch {
+            stream?.getTracks().forEach((t) => t.stop());
+            resolve({ transcript: "", durationSec });
+          }
+        });
+      },
+      cancel: () => {
+        try {
+          mediaRecorder.stop();
+        } catch { /* */ }
+        stream?.getTracks().forEach((t) => t.stop());
+      },
+    };
+  }
+
+  // ── DESKTOP PATH: WebSpeech API (Live Streaming) ───────────────────────────
+  let finalTranscript = "";
+  let interimTranscript = "";
+  let recognition: any = null;
 
   const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (SR) {
@@ -38,32 +130,19 @@ export async function startRecording(): Promise<RecorderHandle> {
       }
     };
     recognition.onerror = () => { /* swallow */ };
-    recognition.onend = () => {
-      if (!isUserStopped) {
-        // Auto-reboot to bypass mobile Chrome 2-3s silence timeout
-        setTimeout(() => {
-          if (!isUserStopped) {
-            try { recognition.start(); } catch { /* already started */ }
-          }
-        }, 50);
-      }
-    };
     try { recognition.start(); } catch { /* already started */ }
   }
 
   return {
     stop: async () => {
-      isUserStopped = true;
       const durationSec = (Date.now() - startedAt) / 1000;
       try { recognition?.stop(); } catch { /* */ }
-      // Give recognition a beat to flush final results
       await new Promise((r) => setTimeout(r, 350));
       stream?.getTracks().forEach((t) => t.stop());
       const transcript = (finalTranscript + " " + interimTranscript).trim();
       return { transcript, durationSec };
     },
     cancel: () => {
-      isUserStopped = true;
       try { recognition?.stop(); } catch { /* */ }
       stream?.getTracks().forEach((t) => t.stop());
     },
@@ -71,6 +150,10 @@ export async function startRecording(): Promise<RecorderHandle> {
 }
 
 export function speechSupported(): boolean {
-  return typeof window !== "undefined" &&
-    !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  if (typeof window === "undefined") return false;
+  return (
+    !!(window as any).SpeechRecognition ||
+    !!(window as any).webkitSpeechRecognition ||
+    typeof MediaRecorder !== "undefined"
+  );
 }
