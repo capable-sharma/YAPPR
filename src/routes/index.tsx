@@ -82,9 +82,6 @@ function YapprApp() {
         <div className="mx-auto max-w-6xl px-3 md:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="font-display text-3xl md:text-5xl leading-none truncate">YAPPR</div>
-            <div className="font-mono text-[10px] uppercase bg-ink text-paper px-2 py-1 hidden md:inline-block">
-              v0 · Forge mode
-            </div>
           </div>
           <ProfileButton />
         </div>
