@@ -1,9 +1,9 @@
 import type { Tab } from "@/lib/yappr-data";
 
-const TABS: { id: Tab; label: string; emoji: string; color: string }[] = [
-  { id: "topics", label: "Impromptu", emoji: "🎯", color: "bg-yappr-yellow" },
-  { id: "interview", label: "Interview Prep", emoji: "💼", color: "bg-yappr-blue text-paper" },
-  { id: "vocab", label: "WordBuzz", emoji: "⚡", color: "bg-yappr-magenta text-paper" },
+const TABS: { id: Tab; label: string; color: string }[] = [
+  { id: "topics", label: "Impromptu", color: "bg-yappr-yellow" },
+  { id: "interview", label: "Interview Prep", color: "bg-yappr-blue text-paper" },
+  { id: "vocab", label: "WordBuzz", color: "bg-yappr-magenta text-paper" },
 ];
 
 export function TabSwitcher({ value, onChange }: { value: Tab; onChange: (t: Tab) => void }) {
@@ -21,7 +21,6 @@ export function TabSwitcher({ value, onChange }: { value: Tab; onChange: (t: Tab
               active ? `${t.color} brutal-border` : "bg-transparent text-ink hover:bg-muted",
             ].join(" ")}
           >
-            <span aria-hidden className="text-sm md:text-base">{t.emoji}</span>
             <span className="truncate">{t.label}</span>
           </button>
         );
