@@ -57,7 +57,7 @@ export function Lever({ onPull, disabled, label = "PULL" }: LeverProps) {
       <div className="font-display text-xs tracking-widest">{label}</div>
       <div
         ref={trackRef}
-        className="relative w-16 h-64 bg-yappr-yellow brutal-border brutal-shadow"
+        className="relative w-16 h-64 bg-yappr-yellow brutal-border brutal-shadow touch-none"
         aria-disabled={disabled}
       >
         {/* track slots */}
