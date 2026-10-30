@@ -1,4 +1,12 @@
-# Logs
+# ─── SECRETS — NEVER COMMIT ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.dev.vars
+
+# ─── Logs ────────────────────────────────────────────────────
 logs
 *.log
 npm-debug.log*
@@ -7,6 +15,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# ─── Build / Runtime ────────────────────────────────────────
 node_modules
 dist
 dist-ssr
@@ -16,11 +25,10 @@ dist-ssr
 .nitro
 *.local
 
-# Wrangler / Cloudflare
+# ─── Wrangler / Cloudflare ──────────────────────────────────
 .wrangler/
-.dev.vars
 
-# Editor directories and files
+# ─── Editor directories and files ───────────────────────────
 .vscode/*
 !.vscode/extensions.json
 .idea
