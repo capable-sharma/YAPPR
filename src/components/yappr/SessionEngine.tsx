@@ -206,7 +206,8 @@ export function SessionEngine({
     }
   
     // Kick off AI substance review — non-blocking
-    if (r.wordCount >= 45) {
+    const minWords = mode === "vocab" ? 5 : 10;
+    if (r.wordCount >= minWords) {
       setContentLoading(true);
       setContent(null);
       analyzeContent({ data: { transcript: r.rawText, prompt, mode } })
@@ -284,12 +285,12 @@ export function SessionEngine({
         })
         .finally(() => setContentLoading(false));
     } else {
-      // Handle < 45 words (including 0)
+      // Handle < minWords words (including 0)
       const isZero = r.wordCount === 0;
       setContent({
         verdict: isZero
           ? "Microphone detected no speech. Check your mic permissions and try again!"
-          : "Not enough speech data for AI Coach review (minimum 45 words required). Keep yapping next time!",
+          : `Not enough speech data for AI Coach review (minimum ${minWords} words required). Keep yapping next time!`,
         contentScore: 0,
         strengths: [],
         weaknesses: [],

@@ -51,89 +51,117 @@ function parseResponse(parsed: Record<string, unknown>): ContentAnalysis {
   };
 }
 
-// ── Primary — Gemini 2.5 Flash ────────────────────────────────────────────────
+// ── Primary — Gemini ─────────────────────────────────────────────────────────
 
 async function callGemini(
   key: string,
   userPrompt: string
 ): Promise<ContentAnalysis> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  let lastError: Error | null = null;
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          contents: [{ parts: [{ text: userPrompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 8192,
-            responseMimeType: "application/json",
+  for (const model of models) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": key,
           },
-        }),
+          signal: controller.signal,
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ parts: [{ text: userPrompt }] }],
+            generationConfig: {
+              temperature: 0.4,
+              maxOutputTokens: 8192,
+              responseMimeType: "application/json",
+            },
+          }),
+        }
+      );
+
+      clearTimeout(timeout);
+
+      if (res.status === 429) throw new Error("GEMINI_RATE_LIMITED");
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`GEMINI_AUTH_ERROR_${res.status}`);
       }
-    );
+      if (!res.ok) throw new Error(`GEMINI_HTTP_${res.status}`);
 
-    clearTimeout(timeout);
-
-    if (res.status === 429) throw new Error("GEMINI_RATE_LIMITED");
-    if (!res.ok) throw new Error(`GEMINI_HTTP_${res.status}`);
-
-    const j = await res.json();
-    const content: string =
-      j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    return parseResponse(JSON.parse(content));
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
+      const j = await res.json();
+      const content: string =
+        j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+      return parseResponse(JSON.parse(content));
+    } catch (e) {
+      clearTimeout(timeout);
+      lastError = e instanceof Error ? e : new Error(String(e));
+      if (lastError.message.includes("GEMINI_AUTH_ERROR")) break;
+    }
   }
+
+  throw lastError ?? new Error("GEMINI_ALL_MODELS_FAILED");
 }
 
-// ── Fallback — Groq (Llama 3.1 8b Instant) ───────────────────────────────────
+// ── Fallback — Groq (Ultra-fast LLM fallback) ───────────────────────────────────
 
 async function callGroq(
   key: string,
   userPrompt: string
 ): Promise<ContentAnalysis> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const models = [
+    "qwen/qwen3.8-27b",
+    "openai/gpt-oss-20b",
+    "openai/gpt-oss-120b",
+  ];
+  let lastError: Error | null = null;
 
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${key}`,
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.4,
-        max_tokens: 2048,
-      }),
-    });
+  for (const model of models) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
-    clearTimeout(timeout);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.4,
+          max_tokens: 2048,
+        }),
+      });
 
-    if (!res.ok) throw new Error(`GROQ_HTTP_${res.status}`);
+      clearTimeout(timeout);
 
-    const j = await res.json();
-    const content: string = j?.choices?.[0]?.message?.content ?? "{}";
-    return parseResponse(JSON.parse(content));
-  } catch (e) {
-    clearTimeout(timeout);
-    throw e;
+      if (!res.ok) {
+        throw new Error(`GROQ_HTTP_${res.status}_${model}`);
+      }
+
+      const j = await res.json();
+      const content: string = j?.choices?.[0]?.message?.content ?? "{}";
+      return parseResponse(JSON.parse(content));
+    } catch (e) {
+      clearTimeout(timeout);
+      lastError = e instanceof Error ? e : new Error(String(e));
+      console.warn(`Groq model ${model} failed, trying next:`, lastError.message);
+    }
   }
+
+  throw lastError ?? new Error("GROQ_ALL_MODELS_FAILED");
 }
 
 // ── Server function ───────────────────────────────────────────────────────────

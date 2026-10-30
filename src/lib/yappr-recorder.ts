@@ -110,40 +110,86 @@ export async function startRecording(): Promise<RecorderHandle> {
     };
   }
 
-  // ── DESKTOP PATH: WebSpeech API (Live Streaming) ───────────────────────────
+  // ── DESKTOP PATH: WebSpeech API (Live Streaming) with Groq Whisper Backup ───
   let finalTranscript = "";
   let interimTranscript = "";
   let recognition: any = null;
 
+  // MediaRecorder backup in case WebSpeech is unsupported or silent (e.g. Safari / Firefox)
+  const chunks: Blob[] = [];
+  let mediaRecorder: MediaRecorder | null = null;
+  if (stream && typeof MediaRecorder !== "undefined") {
+    try {
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+        ? "audio/mp4"
+        : "";
+      mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+      mediaRecorder.start(500);
+    } catch { /* MediaRecorder init failed */ }
+  }
+
   const SR: any = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (SR) {
-    recognition = new SR();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-IN";
-    recognition.onresult = (event: any) => {
-      interimTranscript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const res = event.results[i];
-        if (res.isFinal) finalTranscript += res[0].transcript + " ";
-        else interimTranscript += res[0].transcript + " ";
-      }
-    };
-    recognition.onerror = () => { /* swallow */ };
-    try { recognition.start(); } catch { /* already started */ }
+    try {
+      recognition = new SR();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-IN";
+      recognition.onresult = (event: any) => {
+        interimTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (res.isFinal) finalTranscript += res[0].transcript + " ";
+          else interimTranscript += res[0].transcript + " ";
+        }
+      };
+      recognition.onerror = () => { /* swallow */ };
+      recognition.start();
+    } catch { /* already started or failed */ }
   }
 
   return {
     stop: async () => {
       const durationSec = (Date.now() - startedAt) / 1000;
       try { recognition?.stop(); } catch { /* */ }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        try { mediaRecorder.stop(); } catch { /* */ }
+      }
       await new Promise((r) => setTimeout(r, 350));
       stream?.getTracks().forEach((t) => t.stop());
-      const transcript = (finalTranscript + " " + interimTranscript).trim();
+      let transcript = (finalTranscript + " " + interimTranscript).trim();
+
+      // If Web Speech API returned nothing (Safari, Firefox, or mic error),
+      // seamlessly transcribe the audio buffer using Groq Whisper.
+      if (!transcript && chunks.length > 0 && mediaRecorder) {
+        try {
+          const blob = new Blob(chunks, { type: mediaRecorder.mimeType || "audio/webm" });
+          if (blob.size > 0) {
+            const audioBase64 = await blobToBase64(blob);
+            const res = await transcribeAudio({
+              data: { audioBase64, mimeType: mediaRecorder.mimeType || "audio/webm" },
+            });
+            transcript = res.transcript || "";
+          }
+        } catch (e) {
+          console.error("Desktop Groq Whisper fallback failed:", e);
+        }
+      }
+
       return { transcript, durationSec };
     },
     cancel: () => {
       try { recognition?.stop(); } catch { /* */ }
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        try { mediaRecorder.stop(); } catch { /* */ }
+      }
       stream?.getTracks().forEach((t) => t.stop());
     },
   };

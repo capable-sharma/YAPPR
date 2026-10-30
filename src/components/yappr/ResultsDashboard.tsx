@@ -221,11 +221,12 @@ function ContentReview({
     );
   }
   if (!content) {
+    const minWords = mode === "vocab" ? 5 : 10;
     return (
       <div className="brutal-border bg-paper p-4">
         <div className="font-mono text-[10px] uppercase opacity-60">AI Coach</div>
         <div className="font-mono text-xs mt-1 opacity-70">
-          Speak at least 10 words to unlock content review.
+          Speak at least {minWords} words to unlock content review.
         </div>
       </div>
     );
@@ -240,15 +241,20 @@ function ContentReview({
           <div className="font-mono text-[10px] uppercase opacity-70">AI Coach · {heading}</div>
           <div className="font-display text-2xl md:text-3xl leading-tight mt-1">{content.verdict}</div>
         </div>
-        {content.contentScore > 0 && (
+        {content.contentScore > 0 ? (
           <div className={[
             "brutal-border px-3 py-2 text-center",
             emphasize ? "bg-yappr-yellow text-ink" : "bg-ink text-paper",
           ].join(" ")}>
-            <div className="font-mono text-[9px] uppercase opacity-80">Content</div>
+            <div className="font-mono text-[9px] uppercase opacity-80">Content Score</div>
             <div className="font-display text-3xl leading-none">{content.contentScore}</div>
           </div>
-        )}
+        ) : (content.verdict.includes("offline") || content.verdict.includes("unavailable") || content.verdict.includes("missing")) ? (
+          <div className="brutal-border px-3 py-2 text-center bg-yappr-magenta text-paper">
+            <div className="font-mono text-[9px] uppercase opacity-90">AI Coach</div>
+            <div className="font-display text-sm leading-tight mt-1">OFFLINE</div>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
